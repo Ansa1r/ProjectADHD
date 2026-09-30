@@ -1,4 +1,4 @@
-package com.example.projectadhd
+package com.ansa1r.projectadhd
 
 import org.junit.Test
 

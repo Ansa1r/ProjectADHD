@@ -1,4 +1,4 @@
-package com.example.projectadhd.ui.theme
+package com.ansa1r.projectadhd.ui.theme
 
 import android.app.Activity
 import android.os.Build
