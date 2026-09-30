@@ -14,13 +14,17 @@ class AppPreferences(context: Context) {
     private val store = context.applicationContext.settingsDataStore
     private val cooldown = intPreferencesKey("cooldown_minutes")
     private val lastIntervention = longPreferencesKey("last_intervention_at")
+    private val praiseCooldown = intPreferencesKey("praise_cooldown_minutes")
+    private val lastPraise = longPreferencesKey("last_praise_at")
     private val lastStarted = longPreferencesKey("last_monitoring_started_at")
 
     val settings = store.data.map { prefs ->
         AppSettings(
             cooldownMinutes = (prefs[cooldown] ?: 30).coerceIn(1, 180),
             lastInterventionAt = prefs[lastIntervention],
-            lastMonitoringStartedAt = prefs[lastStarted]
+            lastMonitoringStartedAt = prefs[lastStarted],
+            praiseCooldownMinutes = (prefs[praiseCooldown] ?: 30).coerceIn(1, 180),
+            lastPraiseAt = prefs[lastPraise]
         )
     }
 
@@ -28,6 +32,11 @@ class AppPreferences(context: Context) {
         require(minutes in 1..180)
         store.edit { it[cooldown] = minutes }
     }
+    suspend fun setPraiseCooldown(minutes: Int) {
+        require(minutes in 1..180)
+        store.edit { it[praiseCooldown] = minutes }
+    }
+    suspend fun markPraise(now: Long) { store.edit { it[lastPraise] = now } }
     suspend fun markIntervention(now: Long) { store.edit { it[lastIntervention] = now } }
     suspend fun markMonitoringStarted(now: Long) { store.edit { it[lastStarted] = now } }
 }

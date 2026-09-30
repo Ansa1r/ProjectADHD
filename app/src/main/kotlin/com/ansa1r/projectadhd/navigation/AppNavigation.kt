@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -35,8 +36,15 @@ import com.ansa1r.projectadhd.ui.stats.StatsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppNavigation(container: AppContainer) {
+fun AppNavigation(container: AppContainer, habitsRequest: Int = 0) {
     val nav = rememberNavController()
+    LaunchedEffect(habitsRequest) {
+        if (habitsRequest > 0) nav.navigate(Screen.HABITS.route) {
+            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: Screen.HOME.route
     val title = Screen.entries.firstOrNull { it.route == route }?.title ?: R.string.debug
@@ -71,7 +79,9 @@ fun AppNavigation(container: AppContainer) {
         Box(Modifier.fillMaxSize().padding(padding)) {
             NavHost(navController = nav, startDestination = Screen.HOME.route) {
                 composable(Screen.HOME.route) {
-                    HomeScreen(viewModel(factory = factory { HomeViewModel(container) }))
+                    HomeScreen(viewModel(factory = factory { HomeViewModel(container) })) {
+                        nav.navigate(Screen.HABITS.route) { launchSingleTop = true }
+                    }
                 }
                 composable(Screen.HABITS.route) {
                     HabitsScreen(viewModel(factory = factory { HabitsViewModel(container) }))

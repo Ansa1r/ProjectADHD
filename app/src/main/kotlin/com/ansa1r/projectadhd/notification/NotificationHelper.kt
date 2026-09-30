@@ -14,7 +14,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.ansa1r.projectadhd.MainActivity
 import com.ansa1r.projectadhd.R
-import com.ansa1r.projectadhd.domain.intervention.InterventionDecision
+import com.ansa1r.projectadhd.domain.intervention.InterventionPayload
 import com.ansa1r.projectadhd.monitoring.UsageMonitoringService
 
 class NotificationHelper(private val context: Context) {
@@ -36,7 +36,7 @@ class NotificationHelper(private val context: Context) {
     }
 
     private fun openApp(): PendingIntent = PendingIntent.getActivity(
-        context, 0, Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+        context, 0, MainActivity.habitsIntent(context),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
@@ -58,7 +58,8 @@ class NotificationHelper(private val context: Context) {
             .build()
     }
 
-    fun intervention(decision: InterventionDecision.Notify): Boolean {
+    fun intervention(decision: InterventionPayload, praise: Boolean = false): Boolean {
+        if (praise) return post(INTERVENTION_ID, context.getString(R.string.praise_title), context.getString(R.string.praise_body))
         val body = context.getString(R.string.intervention_body,
             decision.appName, decision.sessionDurationMillis / 60_000, decision.incompleteHabitCount)
         return post(INTERVENTION_ID, context.getString(R.string.intervention_title), body)
@@ -80,6 +81,6 @@ class NotificationHelper(private val context: Context) {
                 .setStyle(NotificationCompat.BigTextStyle().bigText(body)).setContentIntent(openApp())
                 .setAutoCancel(true).setVisibility(NotificationCompat.VISIBILITY_PRIVATE).build())
             true
-        } catch (_: SecurityException) { false }
+        } catch (_: RuntimeException) { false }
     }
 }

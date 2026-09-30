@@ -11,8 +11,13 @@ import kotlinx.coroutines.flow.Flow
 
 data class HabitRow(@Embedded val habit: HabitEntity, val completedToday: Boolean)
 
+data class DailyTaskRow(val id: Long, val completedAt: Long?)
+
 @Dao
 interface HabitDao {
+    @Query("SELECT h.id, c.completedAt FROM habits h LEFT JOIN habit_completions c ON h.id = c.habitId AND c.localDate = :date WHERE h.isActive = 1")
+    suspend fun dailyTasks(date: String): List<DailyTaskRow>
+
     @Query("""
         SELECT habits.*, EXISTS(
             SELECT 1 FROM habit_completions c WHERE c.habitId = habits.id AND c.localDate = :date
@@ -33,7 +38,7 @@ interface HabitDao {
     suspend fun delete(id: Long)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun complete(completion: HabitCompletionEntity)
+    suspend fun complete(completion: HabitCompletionEntity): Long
 
     @Query("DELETE FROM habit_completions WHERE habitId = :id AND localDate = :date")
     suspend fun undoCompletion(id: Long, date: String)

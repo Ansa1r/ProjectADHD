@@ -101,12 +101,15 @@ fun MonitorIssueText(issue: MonitorIssue) {
 
 @Composable
 fun decisionText(decision: InterventionDecision): String = when (decision) {
-    is InterventionDecision.Notify -> stringResource(R.string.decision_notify,
-        decision.appName, decision.sessionDurationMillis / 60_000, decision.incompleteHabitCount)
+    is InterventionDecision.Block -> stringResource(R.string.decision_block, decision.payload.appName)
+    is InterventionDecision.Praise -> stringResource(R.string.decision_praise, decision.payload.appName)
     is InterventionDecision.None -> stringResource(when (decision.reason) {
         NoInterventionReason.NO_FOREGROUND -> R.string.decision_no_foreground
         NoInterventionReason.NOT_TRACKED -> R.string.decision_not_tracked
         NoInterventionReason.BELOW_LIMIT -> R.string.decision_below_limit
         NoInterventionReason.COOLDOWN -> R.string.decision_cooldown
+        NoInterventionReason.NO_TASKS -> R.string.no_tasks_hint
+        NoInterventionReason.MONITORING_OFF -> R.string.monitor_stopped
+        NoInterventionReason.EXCLUDED -> R.string.decision_excluded
     })
 }

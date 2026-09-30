@@ -1,5 +1,6 @@
 package com.ansa1r.projectadhd.ui.debug
 
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -24,6 +25,7 @@ fun DebugScreen(viewModel: DebugViewModel) {
                 Text(stringResource(R.string.debug_intro))
                 Detail(stringResource(R.string.package_name), BuildConfig.APPLICATION_ID)
                 Detail(stringResource(R.string.build_type), BuildConfig.BUILD_TYPE)
+                Detail(stringResource(R.string.overlay_permission), permissionText(state.permissions.overlay))
                 Detail(stringResource(R.string.usage_access), permissionText(state.permissions.usageAccess))
                 Detail(stringResource(R.string.notification_permission), permissionText(state.permissions.notifications))
                 Detail(stringResource(R.string.channels_status),
@@ -34,12 +36,31 @@ fun DebugScreen(viewModel: DebugViewModel) {
                 Detail(stringResource(R.string.foreground_app), state.monitoring.foregroundName ?: "—")
                 Detail(stringResource(R.string.session_start), timestampText(state.monitoring.session?.startedAt))
                 Detail(stringResource(R.string.current_session), durationText(state.monitoring.session?.durationMillis ?: 0))
+                Detail(stringResource(R.string.session_limit), state.monitoring.limitMillis?.let(::durationText) ?: "—")
+                Detail(stringResource(R.string.daily_task_summary), "${state.tasks.total} / ${state.tasks.completed} / ${state.tasks.incomplete}")
                 Detail(stringResource(R.string.engine_decision), decisionText(state.monitoring.decision))
+                Detail(stringResource(R.string.praise_cooldown), stringResource(R.string.minutes_value, state.settings.praiseCooldownMinutes))
+                Detail(stringResource(R.string.last_praise), timestampText(state.settings.lastPraiseAt))
+                Detail(stringResource(R.string.last_unlock), timestampText(state.lastUnlock))
+                Detail(stringResource(R.string.overlay_visible), state.overlay.visible.toString())
+                Detail(stringResource(R.string.overlay_error), state.overlay.lastError ?: "—")
+                Detail(stringResource(R.string.debug_test_until), timestampText(state.overlay.testArmedUntil))
                 Detail(stringResource(R.string.cooldown), stringResource(R.string.minutes_value, state.settings.cooldownMinutes))
                 Detail(stringResource(R.string.cooldown_reserved_at), timestampText(state.settings.lastInterventionAt))
                 Detail(stringResource(R.string.last_intervention), timestampText(state.lastEventAt))
                 Detail(stringResource(R.string.monitoring_started_at), timestampText(state.settings.lastMonitoringStartedAt))
                 Detail(stringResource(R.string.state_updated), timestampText(state.monitoring.updatedAt))
+            }
+        }
+        item { Detail(stringResource(R.string.active_block_count), state.blocks.size.toString()) }
+        items(state.blocks, key = { it.packageName }) { block ->
+            SectionCard {
+                Text(block.appName, style = MaterialTheme.typography.titleMedium)
+                Detail(stringResource(R.string.blocked_package), block.packageName)
+                Detail(stringResource(R.string.block_started), timestampText(block.startedAt))
+                Detail(stringResource(R.string.baseline_completed), block.baselineCompletedCount.toString())
+                Detail(stringResource(R.string.baseline_ids), block.eligibleHabitIds.joinToString())
+                Detail(stringResource(R.string.current_session), durationText(block.triggerSessionDurationMillis))
             }
         }
         item {
@@ -58,6 +79,11 @@ fun DebugScreen(viewModel: DebugViewModel) {
                 OutlinedButton(onClick = viewModel::refresh) { Text(stringResource(R.string.refresh)) }
                 OutlinedButton(onClick = viewModel::testNotification) { Text(stringResource(R.string.test_notification)) }
                 OutlinedButton(onClick = viewModel::simulate) { Text(stringResource(R.string.simulate_intervention)) }
+                OutlinedButton(onClick = viewModel::testBlock) { Text(stringResource(R.string.debug_block_test)) }
+                OutlinedButton(onClick = viewModel::testPraise) { Text(stringResource(R.string.debug_praise_test)) }
+                Text(stringResource(R.string.debug_test_hint))
+                OutlinedButton(onClick = viewModel::clearBlocks) { Text(stringResource(R.string.clear_blocks)) }
+                OutlinedButton(onClick = viewModel::stop) { Text(stringResource(R.string.stop_monitoring)) }
                 Text(stringResource(R.string.simulation_hint))
                 state.simulation?.let { Detail(stringResource(R.string.simulation_result), decisionText(it)) }
                 TextButton(onClick = { confirmClear = true }) { Text(stringResource(R.string.clear_history)) }

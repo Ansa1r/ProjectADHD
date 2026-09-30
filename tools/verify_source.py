@@ -1,5 +1,7 @@
 from pathlib import Path
 import re
+import json
+import hashlib
 import sqlite3
 import tomllib
 import xml.etree.ElementTree as ET
@@ -81,7 +83,7 @@ def verify_structure():
 def verify_manifest():
     root = ET.parse(ROOT / "app/src/main/AndroidManifest.xml").getroot()
     permissions = {entry.get(ANDROID + "name") for entry in root.findall("uses-permission")}
-    expected = {"PACKAGE_USAGE_STATS", "POST_NOTIFICATIONS", "FOREGROUND_SERVICE", "FOREGROUND_SERVICE_SPECIAL_USE"}
+    expected = {"PACKAGE_USAGE_STATS", "POST_NOTIFICATIONS", "FOREGROUND_SERVICE", "FOREGROUND_SERVICE_SPECIAL_USE", "SYSTEM_ALERT_WINDOW"}
     assert permissions == {"android.permission." + item for item in expected}, permissions
     application = root.find("application")
     assert application.get(ANDROID + "allowBackup") == "false"
@@ -90,30 +92,49 @@ def verify_manifest():
     assert service.get(ANDROID + "exported") == "false"
     assert service.get(ANDROID + "foregroundServiceType") == "specialUse"
     assert service.find("property").get(ANDROID + "name") == "android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-    assert root.find("queries/intent/category").get(ANDROID + "name") == "android.intent.category.LAUNCHER"
+    assert any(e.get(ANDROID + "name") == "android.intent.category.LAUNCHER" for e in root.findall("queries/intent/category"))
+    assert len(application.findall("service")) == 1
+    assert len(application.findall("activity")) == 1
     print("PASS: permissions, foreground service, package visibility and disabled backup")
 
 
 def verify_sql():
-    entities = (SOURCE / "data/local/entity/Entities.kt").read_text()
+    schema_root = ROOT / "app/schemas/com.ansa1r.projectadhd.data.local.AppDatabase"
+    v1 = json.loads((schema_root / "1.json").read_text())["database"]
+    v2 = json.loads((schema_root / "2.json").read_text())["database"]
     connection = sqlite3.connect(":memory:")
     connection.execute("PRAGMA foreign_keys=ON")
-    mapping = {"String": "TEXT", "Long": "INTEGER", "Int": "INTEGER", "Boolean": "INTEGER"}
-    for match in re.finditer(r"@Entity\b(.*?)data class (\w+)\((.*?)(?=\n@Entity|\Z)", entities, re.S):
-        annotation, name, body = match.groups()
-        table = re.search(r'tableName = "(\w+)"', annotation).group(1)
-        fields = re.findall(r"val (\w+): (\w+)", body)
-        columns = [column + " " + mapping[kind] + " NOT NULL" for column, kind in fields]
-        primary = re.search(r"@PrimaryKey(?:\([^)]*\))?\s+val (\w+)", body)
-        if primary:
-            columns.append("PRIMARY KEY (" + primary.group(1) + ")")
-        else:
-            keys = re.search(r"primaryKeys = \[([^]]+)]", annotation).group(1)
-            columns.append("PRIMARY KEY (" + keys.replace('"', "") + ")")
-        if name == "HabitCompletionEntity":
-            assert "onDelete = ForeignKey.CASCADE" in annotation
-            columns.append("FOREIGN KEY (habitId) REFERENCES habits(id) ON DELETE CASCADE")
-        connection.execute("CREATE TABLE " + table + " (" + ", ".join(columns) + ")")
+    def create(db, schema):
+        for entity in schema["entities"]:
+            db.execute(entity["createSql"].replace("${TABLE_NAME}", entity["tableName"]))
+            for index in entity.get("indices", []):
+                db.execute(index["createSql"].replace("${TABLE_NAME}", entity["tableName"]))
+    create(connection, v1)
+    connection.execute("INSERT INTO habits VALUES (10, 'Stage1 habit', 10, 1)")
+    connection.execute("INSERT INTO habit_completions VALUES (10, '2026-09-30', 20)")
+    connection.execute("INSERT INTO tracked_apps VALUES ('old.app', 'Old', 7, 1)")
+    connection.execute("INSERT INTO intervention_events VALUES (10, 'old.app', 'Old', 60000, 60000, 30, 2)")
+    migrations = (SOURCE / "data/local/Migrations.kt").read_text()
+    statements = re.findall(r'db\.execSQL\((?:"""(.*?)"""|"([^"\n]*)")\)', migrations, re.S)
+    assert len(statements) == 3
+    for triple, single in statements:
+        connection.execute(triple or single)
+    assert connection.execute("SELECT title FROM habits WHERE id=10").fetchone() == ("Stage1 habit",)
+    assert connection.execute("SELECT completedAt FROM habit_completions WHERE habitId=10").fetchone() == (20,)
+    assert connection.execute("SELECT sessionLimitMinutes FROM tracked_apps WHERE packageName='old.app'").fetchone() == (7,)
+    assert connection.execute("SELECT type, detail FROM intervention_events WHERE id=10").fetchone() == ("LEGACY_NOTIFICATION", "")
+    expected = sqlite3.connect(":memory:")
+    create(expected, v2)
+    for entity in v2["entities"]:
+        table = entity["tableName"]
+        for pragma in ("table_info", "foreign_key_list", "index_list"):
+            query = "PRAGMA " + pragma + "('" + table + "')"
+            assert connection.execute(query).fetchall() == expected.execute(query).fetchall(), (table, pragma)
+    expected.close()
+    connection.execute("DELETE FROM habits")
+    connection.execute("DELETE FROM tracked_apps")
+    connection.execute("DELETE FROM intervention_events")
+    print("PASS: actual MIGRATION_1_2 SQL preserves all four Stage 1 tables and matches schema 2 columns, defaults, keys and indices")
     queries = {}
     for path in (SOURCE / "data/local/dao").glob("*.kt"):
         for match in re.finditer(r'@Query\((?:"""(.*?)"""|"([^"]*)")\)\s*(?:suspend\s+)?fun\s+(\w+)', path.read_text(), re.S):
@@ -137,12 +158,33 @@ def verify_sql():
     connection.execute(queries["HabitDao.delete"], {"id": 1})
     assert connection.execute("SELECT COUNT(*) FROM habit_completions").fetchone()[0] == 0
     for identity, at in ((1, 500), (2, 700), (3, 700)):
-        connection.execute("INSERT INTO intervention_events VALUES (?, 'app', 'App', 900000, 900000, ?, 2)", (identity, at))
+        connection.execute("INSERT INTO intervention_events (id, packageName, appName, sessionDurationMillis, limitMillis, occurredAt, incompleteHabitCount) VALUES (?, 'app', 'App', 900000, 900000, ?, 2)", (identity, at))
     assert [row[0] for row in connection.execute(queries["InterventionDao.observeRecent"])] == [3, 2, 1]
     connection.execute(queries["InterventionDao.clear"])
     assert connection.execute("SELECT COUNT(*) FROM intervention_events").fetchone()[0] == 0
+    connection.execute("INSERT INTO block_sessions VALUES ('app', 'App', 100, '2026-09-30', 60000, 60000, 1, '2,3', 1, NULL, NULL)")
+    try:
+        connection.execute("INSERT INTO block_sessions SELECT * FROM block_sessions")
+        raise AssertionError("Duplicate package block accepted")
+    except sqlite3.IntegrityError:
+        pass
+    assert connection.execute(queries["BlockSessionDao.release"], {"now": 200, "reason": "COMPLETION", "packageName": "app"}).rowcount == 1
+    assert connection.execute(queries["BlockSessionDao.release"], {"now": 300, "reason": "COMPLETION", "packageName": "app"}).rowcount == 0
+    assert connection.execute(queries["BlockSessionDao.active"]).fetchall() == []
     connection.close()
     print("PASS:", len(queries), "DAO queries prepared; uniqueness, local-day counts, disabled habits, cascade and event order checked on SQLite")
+
+
+def verify_assets():
+    hashes = {
+        "background_main.png": "06dfd88e3fe62d2f72b01c461916487d048bf436694699f6274f450056dd3abf",
+        "mascot_idle.png": "95818b3a0ee211091a3e8d7fbd7c9bb6cd14b4f43c3599be49a0baa9b92fe9f2",
+        "mascot_blocking.png": "0b52cfcade607f503f0485ba75b75268ea9a5330dc526dae36a61cba66757892",
+    }
+    for name, digest in hashes.items():
+        data = (ROOT / "app/src/main/res/drawable-nodpi" / name).read_bytes()
+        assert hashlib.sha256(data).hexdigest() == digest, name
+    print("PASS: three supplied assets preserved byte-for-byte")
 
 
 if __name__ == "__main__":
@@ -150,4 +192,5 @@ if __name__ == "__main__":
     verify_structure()
     verify_manifest()
     verify_sql()
+    verify_assets()
     print("Source checks passed. Kotlin compilation, JUnit, Android lint and device behavior are NOT checked by this script.")

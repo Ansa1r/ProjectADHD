@@ -3,6 +3,7 @@ package com.ansa1r.projectadhd.monitoring
 import com.ansa1r.projectadhd.domain.intervention.InterventionDecision
 import com.ansa1r.projectadhd.domain.intervention.NoInterventionReason
 import com.ansa1r.projectadhd.domain.model.AppSession
+import com.ansa1r.projectadhd.domain.model.DailyTaskSummary
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -16,7 +17,9 @@ data class MonitoringSnapshot(
     val session: AppSession? = null,
     val foregroundName: String? = null,
     val decision: InterventionDecision = InterventionDecision.None(NoInterventionReason.NO_FOREGROUND),
-    val updatedAt: Long? = null
+    val updatedAt: Long? = null,
+    val tasks: DailyTaskSummary = DailyTaskSummary(),
+    val limitMillis: Long? = null
 )
 
 class MonitoringState {

@@ -27,13 +27,17 @@ data class InterventionEvent(
     val sessionDurationMillis: Long,
     val limitMillis: Long,
     val occurredAt: Long,
-    val incompleteHabitCount: Int
+    val incompleteHabitCount: Int,
+    val type: InterventionType = InterventionType.LEGACY_NOTIFICATION,
+    val detail: String = ""
 )
 
 data class AppSettings(
     val cooldownMinutes: Int = 30,
     val lastInterventionAt: Long? = null,
-    val lastMonitoringStartedAt: Long? = null
+    val lastMonitoringStartedAt: Long? = null,
+    val praiseCooldownMinutes: Int = 30,
+    val lastPraiseAt: Long? = null
 )
 
 data class RecordCounts(val habits: Int = 0, val completions: Int = 0, val apps: Int = 0, val events: Int = 0)

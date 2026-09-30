@@ -2,6 +2,10 @@ package com.ansa1r.projectadhd
 
 import android.content.Context
 import androidx.room.Room
+import com.ansa1r.projectadhd.data.local.Migrations
+import com.ansa1r.projectadhd.data.repository.BlockRepository
+import com.ansa1r.projectadhd.monitoring.ExcludedApps
+import com.ansa1r.projectadhd.overlay.OverlayController
 import com.ansa1r.projectadhd.data.local.AppDatabase
 import com.ansa1r.projectadhd.data.preferences.AppPreferences
 import com.ansa1r.projectadhd.data.repository.HabitRepository
@@ -20,17 +24,20 @@ import kotlinx.coroutines.flow.combine
 class AppContainer(context: Context) {
     private val appContext = context.applicationContext
     private val database by lazy {
-        Room.databaseBuilder(appContext, AppDatabase::class.java, "projectadhd.db").build()
+        Room.databaseBuilder(appContext, AppDatabase::class.java, "projectadhd.db").addMigrations(Migrations.MIGRATION_1_2).build()
     }
-    val habits by lazy { HabitRepository(database.habits()) }
+    val blocks by lazy { BlockRepository(database) }
+    val habits by lazy { HabitRepository(database, blocks) }
     val trackedApps by lazy { TrackedAppRepository(database.trackedApps()) }
     val interventions by lazy { InterventionRepository(database.interventions()) }
     val preferences = AppPreferences(appContext)
     val permissions = PermissionManager(appContext)
-    val installedApps = InstalledAppReader(appContext)
+    val excludedApps = ExcludedApps(appContext)
+    val overlays = OverlayController(appContext, permissions, excludedApps)
+    val installedApps = InstalledAppReader(appContext, excludedApps)
     val usage = UsageStatsReader(appContext, permissions)
     val monitoring = MonitoringState()
-    val controller = MonitoringController(appContext, permissions, monitoring)
+    val controller by lazy { MonitoringController(appContext, permissions, monitoring, overlays, blocks) }
     val notifications = NotificationHelper(appContext)
     val engine = InterventionEngine()
     fun recordCounts() = combine(

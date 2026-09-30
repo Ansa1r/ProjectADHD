@@ -1,5 +1,6 @@
 package com.ansa1r.projectadhd.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -39,5 +40,7 @@ data class InterventionEventEntity(
     val sessionDurationMillis: Long,
     val limitMillis: Long,
     val occurredAt: Long,
-    val incompleteHabitCount: Int
+    val incompleteHabitCount: Int,
+    @ColumnInfo(defaultValue = "'LEGACY_NOTIFICATION'") val type: String = "LEGACY_NOTIFICATION",
+    @ColumnInfo(defaultValue = "''") val detail: String = ""
 )

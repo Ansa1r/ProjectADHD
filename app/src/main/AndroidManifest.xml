@@ -4,7 +4,12 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <queries>
+        <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.HOME" /></intent>
+        <intent><action android:name="android.settings.SETTINGS" /></intent>
+        <intent><action android:name="android.settings.USAGE_ACCESS_SETTINGS" /></intent>
+        <intent><action android:name="android.settings.action.MANAGE_OVERLAY_PERMISSION" /></intent>
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
@@ -20,7 +25,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.ProjectADHD">
-        <activity android:name=".MainActivity" android:exported="true"
+        <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTop"
             android:theme="@style/Theme.ProjectADHD" android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -30,7 +35,7 @@
         <service android:name=".monitoring.UsageMonitoringService" android:exported="false"
             android:stopWithTask="false" android:foregroundServiceType="specialUse">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="User-started local digital wellbeing session monitor. Reads UsageEvents every five seconds while the device is in use, compares selected app session limits, and posts habit reminders. Always visible with a stop action; no automatic boot start or data transfer." />
+                android:value="User-started local digital wellbeing session monitor. Reads UsageEvents about once per second while the device is in use. Shows user-authorized overlays only over selected distracting apps until a new daily habit is completed, or praise when all habits are done. Falls back to notifications without overlay access. Always visible with a stop action; no automatic boot start or data transfer." />
         </service>
     </application>
 </manifest>

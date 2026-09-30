@@ -18,7 +18,9 @@ data class PermissionState(
     val usageAccess: Boolean = false,
     val notifications: Boolean = false,
     val monitoringChannel: Boolean = false,
-    val interventionChannel: Boolean = false
+    val interventionChannel: Boolean = false,
+    val overlay: Boolean = false,
+    val overlaySupported: Boolean = Build.VERSION.SDK_INT >= 26
 ) {
     val canMonitor: Boolean get() = usageAccess && notifications && monitoringChannel && interventionChannel
 }
@@ -42,7 +44,7 @@ class PermissionManager(private val context: Context) {
         val notifications = granted && NotificationManagerCompat.from(context).areNotificationsEnabled()
         return PermissionState(hasUsageAccess(), notifications,
             channelEnabled(NotificationHelper.MONITORING_CHANNEL),
-            channelEnabled(NotificationHelper.INTERVENTION_CHANNEL))
+            channelEnabled(NotificationHelper.INTERVENTION_CHANNEL), canDrawOverlays())
     }
 
     private fun channelEnabled(id: String): Boolean {
@@ -50,6 +52,13 @@ class PermissionManager(private val context: Context) {
         val channel = context.getSystemService(NotificationManager::class.java)?.getNotificationChannel(id)
         return channel == null || channel.importance != NotificationManager.IMPORTANCE_NONE
     }
+
+    fun canDrawOverlays(): Boolean = try { Settings.canDrawOverlays(context) } catch (_: RuntimeException) { false }
+
+    fun openOverlaySettings(): Boolean = launch(
+        Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + context.packageName)),
+        Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+    )
 
     fun openUsageSettings(): Boolean = launch(
         Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS, Uri.parse("package:" + context.packageName)),

@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ansa1r.projectadhd.R
+import com.ansa1r.projectadhd.domain.model.InterventionType
 import com.ansa1r.projectadhd.ui.components.*
 import com.ansa1r.projectadhd.util.durationText
 import com.ansa1r.projectadhd.util.timestampText
@@ -48,7 +49,15 @@ fun StatsScreen(viewModel: StatsViewModel) {
         items(state.events, key = { "event:" + it.id }) { event ->
             SectionCard {
                 Text(event.appName, style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(when (event.type) {
+                    InterventionType.LEGACY_NOTIFICATION -> R.string.event_legacy
+                    InterventionType.BLOCK_TRIGGERED -> R.string.event_block
+                    InterventionType.BLOCK_RELEASED -> R.string.event_release
+                    InterventionType.PRAISE_SHOWN -> R.string.event_praise
+                    InterventionType.FALLBACK_NOTIFICATION -> R.string.event_fallback
+                }), color = MaterialTheme.colorScheme.primary)
                 Text(timestampText(event.occurredAt))
+                if (event.detail.isNotBlank()) Text(event.detail, style = MaterialTheme.typography.bodySmall)
                 Detail(stringResource(R.string.current_session), durationText(event.sessionDurationMillis))
                 Detail(stringResource(R.string.session_limit), durationText(event.limitMillis))
                 Detail(stringResource(R.string.incomplete_habits), event.incompleteHabitCount.toString())

@@ -15,7 +15,8 @@ import com.ansa1r.projectadhd.ui.components.*
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val valid = state.cooldown.toIntOrNull()?.let { it in 1..180 } == true
+    val valid = state.cooldown.toIntOrNull()?.let { it in 1..180 } == true &&
+        state.praiseCooldown.toIntOrNull()?.let { it in 1..180 } == true
     ScreenList {
         item { MessageBanner(viewModel) }
         item {
@@ -28,15 +29,32 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     singleLine = true, isError = !valid, enabled = !state.saving,
                     supportingText = { Text(stringResource(R.string.minutes_range)) })
                 Text(stringResource(R.string.saved_cooldown, state.savedCooldown))
+                Text(stringResource(R.string.praise_cooldown), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.praise_cooldown_hint))
+                OutlinedTextField(value = state.praiseCooldown, onValueChange = viewModel::changePraise,
+                    label = { Text(stringResource(R.string.minutes)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true, enabled = !state.saving,
+                    isError = state.praiseCooldown.toIntOrNull()?.let { it in 1..180 } != true,
+                    supportingText = { Text(stringResource(R.string.minutes_range)) })
+                Text(stringResource(R.string.saved_cooldown, state.savedPraiseCooldown))
                 Button(onClick = viewModel::save, enabled = valid && !state.saving,
                     modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.save)) }
             }
         }
         item {
             SectionCard {
+                Text(stringResource(R.string.emergency_stop_hint))
+                OutlinedButton(onClick = viewModel::stop, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.stop_monitoring))
+                }
+            }
+        }
+        item {
+            SectionCard {
                 Text(stringResource(R.string.local_data_title), style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(R.string.local_data_body))
-                Text(stringResource(R.string.stage1_limitations))
+                Text(stringResource(R.string.stage2_limitations))
             }
         }
     }

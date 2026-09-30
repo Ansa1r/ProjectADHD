@@ -1,6 +1,7 @@
 package com.ansa1r.projectadhd.data.repository
 
-import com.ansa1r.projectadhd.data.local.dao.HabitDao
+import androidx.room.withTransaction
+import com.ansa1r.projectadhd.data.local.AppDatabase
 import com.ansa1r.projectadhd.data.local.entity.HabitCompletionEntity
 import com.ansa1r.projectadhd.data.local.entity.HabitEntity
 import com.ansa1r.projectadhd.domain.model.Habit
@@ -10,7 +11,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 
-class HabitRepository(private val dao: HabitDao) {
+class HabitRepository(private val database: AppDatabase, private val blocks: BlockRepository) {
+    private val dao get() = database.habits()
     @OptIn(ExperimentalCoroutinesApi::class)
     fun observeToday() = currentDayFlow().flatMapLatest(dao::observeDay).map { rows ->
         rows.map { row ->
@@ -28,9 +30,13 @@ class HabitRepository(private val dao: HabitDao) {
     suspend fun setActive(id: Long, active: Boolean) = dao.setActive(id, active)
     suspend fun delete(id: Long) = dao.delete(id)
     suspend fun setCompleted(id: Long, completed: Boolean) {
-        val now = System.currentTimeMillis()
-        if (completed) dao.complete(HabitCompletionEntity(id, dayKey(now), now))
-        else dao.undoCompletion(id, dayKey(now))
+        database.withTransaction {
+            val now = System.currentTimeMillis()
+            if (completed) {
+                val inserted = dao.complete(HabitCompletionEntity(id, dayKey(now), now))
+                if (inserted != -1L) blocks.onNewCompletion(id, dayKey(now), now)
+            } else dao.undoCompletion(id, dayKey(now))
+        }
     }
     suspend fun incompleteCount(now: Long) = dao.incompleteCount(dayKey(now))
 }
