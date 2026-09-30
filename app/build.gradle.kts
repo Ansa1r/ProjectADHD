@@ -1,20 +1,21 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
-    namespace = "com.example.projectadhd"
+    namespace = "com.ansa1r.projectadhd"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.example.projectadhd"
+        applicationId = "com.ansa1r.projectadhd"
         minSdk = 24
         targetSdk = 37
         versionCode = 1
-        versionName = "1.0"
+        versionName = "0.1.0-stage1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -32,16 +33,45 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+    // ZIP extraction cannot delete old template sources. Only these roots are compiled.
+    sourceSets {
+        named("main") {
+            kotlin.directories.clear()
+            kotlin.directories.add("src/main/kotlin")
+            java.directories.clear()
+        }
+        named("test") {
+            kotlin.directories.clear()
+            kotlin.directories.add("src/test/kotlin")
+            java.directories.clear()
+        }
+        named("androidTest") {
+            kotlin.directories.clear()
+            kotlin.directories.add("src/androidTest/kotlin")
+            java.directories.clear()
+        }
     }
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.kotlinx.coroutines.android)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
-    implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     testImplementation(libs.junit)
