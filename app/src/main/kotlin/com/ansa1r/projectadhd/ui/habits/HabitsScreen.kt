@@ -22,7 +22,7 @@ fun HabitsScreen(viewModel: HabitsViewModel) {
     ScreenList {
         item { MessageBanner(viewModel) }
         item {
-            Button(onClick = { viewModel.edit() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.add_habit)) }
+            BrandButton(onClick = { viewModel.edit() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.add_habit)) }
         }
         if (state.loading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
         if (!state.loading && state.habits.isEmpty()) item { Text(stringResource(R.string.habits_empty)) }

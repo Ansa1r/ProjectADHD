@@ -38,7 +38,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     isError = state.praiseCooldown.toIntOrNull()?.let { it in 1..180 } != true,
                     supportingText = { Text(stringResource(R.string.minutes_range)) })
                 Text(stringResource(R.string.saved_cooldown, state.savedPraiseCooldown))
-                Button(onClick = viewModel::save, enabled = valid && !state.saving,
+                BrandButton(onClick = viewModel::save, enabled = valid && !state.saving,
                     modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.save)) }
             }
         }

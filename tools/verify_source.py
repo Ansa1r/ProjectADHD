@@ -179,12 +179,16 @@ def verify_assets():
     hashes = {
         "background_main.png": "06dfd88e3fe62d2f72b01c461916487d048bf436694699f6274f450056dd3abf",
         "mascot_idle.png": "95818b3a0ee211091a3e8d7fbd7c9bb6cd14b4f43c3599be49a0baa9b92fe9f2",
+        "mascot_praise.png": "7cb428cbe1b389176f9dfcb687631ff459ff4aa2c8735518b4decc045aa7b0bd",
         "mascot_blocking.png": "0b52cfcade607f503f0485ba75b75268ea9a5330dc526dae36a61cba66757892",
     }
     for name, digest in hashes.items():
         data = (ROOT / "app/src/main/res/drawable-nodpi" / name).read_bytes()
         assert hashlib.sha256(data).hexdigest() == digest, name
-    print("PASS: three supplied assets preserved byte-for-byte")
+    # IHDR: the prepared praise image must retain an RGBA alpha channel.
+    praise = (ROOT / "app/src/main/res/drawable-nodpi/mascot_praise.png").read_bytes()
+    assert praise[:8] == b"\x89PNG\r\n\x1a\n" and praise[25] == 6
+    print("PASS: original background/idle/blocking hashes; prepared RGBA praise asset hash")
 
 
 if __name__ == "__main__":

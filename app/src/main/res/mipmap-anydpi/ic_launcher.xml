@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <size android:width="48dp" android:height="48dp" />
+            <gradient android:angle="45" android:startColor="@color/launcher_blue" android:endColor="@color/launcher_purple" />
+        </shape>
+    </item>
+    <item>
+        <bitmap android:src="@drawable/mascot_idle" android:gravity="fill" android:filter="true" />
+    </item>
+</layer-list>

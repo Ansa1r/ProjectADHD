@@ -18,7 +18,9 @@
 | OverlayController | Не более одного WindowManager-окна на Main, showBlocking/showPraise/hide |
 | ExcludedApps | Собственный пакет, системные пакеты, разрешённые PackageManager queries Settings/Home |
 | MainActivity/AppNavigation | Single Activity; OPEN_HABITS через cold intent/onNewIntent |
-| MascotView/MascotBackdrop | Единое соответствие mood→PNG, исходный фон |
+| MascotView/MascotBackdrop | Три отдельных PNG, исходный фон с Crop на всех основных экранах кроме Settings |
+| BrandComponents / Color / Theme | Фиолетовые карточки и кнопки, центральная палитра; LocalCalmSurfaces для Settings |
+| AppIconLoader / InstalledAppIcon | PackageManager → ограниченный bitmap на IO → Compose, LRU 4 MiB, запасной значок |
 | Home/Settings/Debug ViewModels | StateFlow, жизненный цикл UI, разрешения, диагностика и команды |
 
 ## Источник задач
@@ -92,9 +94,21 @@ DataStore сохраняет отдельно `last_praise_at`/`praise_cooldown_
 
 ## Debug и UI
 
-Home показывает маскота, today progress, active blocked app names, monitoring и три разрешения. Settings содержит независимые интервалы praise/fallback и аварийный STOP. Debug показывает пакеты, session/limit, summary, decision, все active sessions с baseline/startedAt, last unlock/praise, permission, registered window и последнюю ошибку.
+Home показывает idle-маскота, today progress, active blocked app names, monitoring, три разрешения и переходы к Habits/Apps/Stats. Settings содержит независимые интервалы praise/fallback и аварийный STOP. Debug показывает пакеты, session/limit, summary, decision, все active sessions с baseline/startedAt, last unlock/praise, permission, registered window и последнюю ошибку.
 
 Тестовые overlay не создают challenges/events и не меняют cooldown. Чтобы никогда не закрывать собственную Activity, кнопка вооружает тест на 30 секунд: пользователь открывает выбранное приложение; service показывает тест без ожидания лимита. BLOCK preview исчезает через 10 секунд, PRAISE через 4. Настоящее BLOCK имеет приоритет. Debug недоступен в release и не подменяет production decision.
+
+## Оформление и assets
+
+`AppNavigation` оборачивает NavHost в `MascotBackdrop(enabled = route != settings)`. Поэтому фоном охвачены Home, Habits, Apps, Stats и Debug; Settings использует однотонный Background и `LocalCalmSurfaces=true`. BLOCK и PRAISE оборачиваются отдельно, так как живут в WindowManager. Фон рисуется с ContentScale.Crop и тёмным слоем alpha 0.3; никаких отдельных Activity/окон для фонового рисунка нет.
+
+`SectionCard`, `MenuCard`, `BrandButton` задают пурпурный fill, тёмно-фиолетовый border, скругления 20–24 dp, белый текст и небольшую elevation. Settings получает тихую тёмную поверхность. Цвета только в BrandColors, launcher — в Android `values/colors.xml`. BLOCK компонует настоящие Compose Text с длительностью в минутах, числом незавершённых задач, названием приложения и CTA «Посмотреть дела». Кнопка не меняет persistent challenge; длинный экран прокручивается.
+
+`MascotView` использует отдельный `mascot_praise.png`, подготовленный из happy-референса 03 встроенным imagegen удалением фона; alpha проверен. IDLE и BLOCKING — исходные assets 06/05. Подробное происхождение и prompt — ASSETS.md. Нет emoji, встроенного в PNG текста или сетевой загрузки assets. Простые анимации были опциональны; в этой версии нет дополнительных анимационных циклов.
+
+`AppIconLoader` существует в AppContainer и обслуживает только UI. В `Dispatchers.IO` он получает `getApplicationIcon(packageName)` и преобразует Drawable (включая adaptive/vector) через `toBitmap`; размер ограничен 32–192 px, кэш Bitmap — LruCache 4 MiB. Ключ содержит пакет, размер и revision списка. `produceState` отменяется при уходе элемента, учитывает новую ревизию/доступность; при NameNotFoundException/RuntimeException отображается встроенный нейтральный значок. Domain InstalledApp и Room Entity остаются без Drawable/Bitmap.
+
+Launcher использует исходный idle PNG: adaptive XML раздельно задаёт фоновый градиент и foreground с пропорциональными отступами 16.6667%; прозрачные края самого PNG добавляют запас при маскировании. Monochrome использует alpha-силуэт того же foreground. На API 24–25 fallback — layer-list с круговым фоном и PNG. Дефолтные template WEBP удалены; новые anydpi-ресурсы также имеют приоритет при распаковке поверх старой копии. Preview разных OEM-масок и themed icon нужно проверить локально.
 
 ## Ограничения и источники
 
@@ -111,3 +125,6 @@ Home показывает маскота, today progress, active blocked app nam
 - [Background activity launch](https://developer.android.com/guide/components/activities/secure-bal)
 - [FGS types](https://developer.android.com/develop/background-work/services/fgs/service-types)
 - [Room SchemaIdentityKey](https://github.com/androidx/androidx/blob/d503771975385615d465665262c8e122f11c84c3/room/room-compiler/src/main/kotlin/androidx/room/vo/SchemaIdentityKey.kt)
+
+- [Adaptive icon layers and safe zone](https://developer.android.com/develop/ui/compose/system/icon_design_adaptive).
+- [PackageManager.getApplicationIcon](https://developer.android.com/reference/android/content/pm/PackageManager#getApplicationIcon(java.lang.String)).

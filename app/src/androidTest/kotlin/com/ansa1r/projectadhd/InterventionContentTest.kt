@@ -20,14 +20,14 @@ class InterventionContentTest {
             BlockingContent(InterventionPayload("video.app", "Video", 60_000, 60_000, 2)) { opened = true }
         } }
         compose.onNodeWithContentDescription("Маскот просит вернуться к задачам").assertExists()
-        compose.onNodeWithText("Осталось задач: 2").assertExists()
-        compose.onNodeWithText("Перейти к задачам").performScrollTo().performClick()
+        compose.onNodeWithText("Осталось дел на сегодня: 2").assertExists()
+        compose.onNodeWithText("Посмотреть дела").performScrollTo().performClick()
         compose.runOnIdle { assertTrue(opened) }
     }
     @Test fun praiseHasNoBlockingTaskAction() {
         compose.setContent { ProjectADHDTheme { PraiseContent() } }
         compose.onNodeWithText("Отличная работа!").assertIsDisplayed()
-        compose.onNodeWithText("Перейти к задачам").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Маскот ProjectADHD в хорошем настроении").assertIsDisplayed()
+        compose.onNodeWithText("Посмотреть дела").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Радостный маскот хвалит за выполненные дела").assertIsDisplayed()
     }
 }

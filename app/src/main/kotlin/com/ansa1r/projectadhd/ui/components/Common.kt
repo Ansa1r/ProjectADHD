@@ -1,6 +1,8 @@
 package com.ansa1r.projectadhd.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,6 +32,7 @@ import com.ansa1r.projectadhd.domain.intervention.InterventionDecision
 import com.ansa1r.projectadhd.domain.intervention.NoInterventionReason
 import com.ansa1r.projectadhd.monitoring.MonitorIssue
 import com.ansa1r.projectadhd.monitoring.MonitorStatus
+import com.ansa1r.projectadhd.ui.theme.BrandColors
 
 @Composable
 fun ScreenList(content: LazyListScope.() -> Unit) {
@@ -38,8 +42,14 @@ fun ScreenList(content: LazyListScope.() -> Unit) {
 
 @Composable
 fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp), content = content)
+    val calm = LocalCalmSurfaces.current
+    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (calm) BrandColors.Surface else BrandColors.PurpleSurface,
+            contentColor = BrandColors.Text),
+        border = BorderStroke(if (calm) 1.dp else 2.dp, BrandColors.PurpleOutline),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (calm) 0.dp else 3.dp)) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
     }
 }
 

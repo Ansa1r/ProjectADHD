@@ -15,19 +15,27 @@ import com.ansa1r.projectadhd.ui.theme.BrandColors
 @Composable
 fun MascotView(mood: MascotMood, modifier: Modifier = Modifier) {
     val asset = when (mood) {
-        MascotMood.IDLE, MascotMood.PRAISE -> R.drawable.mascot_idle
+        MascotMood.IDLE -> R.drawable.mascot_idle
         MascotMood.BLOCKING -> R.drawable.mascot_blocking
+        MascotMood.PRAISE -> R.drawable.mascot_praise
     }
-    Image(painterResource(asset), stringResource(if (mood == MascotMood.BLOCKING)
-        R.string.mascot_blocking_description else R.string.mascot_idle_description),
+    val description = when (mood) {
+        MascotMood.IDLE -> R.string.mascot_idle_description
+        MascotMood.BLOCKING -> R.string.mascot_blocking_description
+        MascotMood.PRAISE -> R.string.mascot_praise_description
+    }
+    Image(painterResource(asset), stringResource(description),
         modifier, contentScale = ContentScale.Fit)
 }
 
 @Composable
-fun MascotBackdrop(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
+fun MascotBackdrop(modifier: Modifier = Modifier, enabled: Boolean = true, content: @Composable BoxScope.() -> Unit) {
     Box(modifier.background(BrandColors.Background)) {
-        Image(painterResource(R.drawable.background_main), contentDescription = null,
-            modifier = Modifier.matchParentSize(), contentScale = ContentScale.Crop)
+        if (enabled) {
+            Image(painterResource(R.drawable.background_main), contentDescription = null,
+                modifier = Modifier.matchParentSize(), contentScale = ContentScale.Crop)
+            Box(Modifier.matchParentSize().background(BrandColors.Background.copy(alpha = 0.3f)))
+        }
         content()
     }
 }

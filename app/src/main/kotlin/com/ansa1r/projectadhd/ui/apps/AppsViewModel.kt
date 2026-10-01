@@ -14,6 +14,7 @@ data class AppsUiState(
     val tracked: List<TrackedApp> = emptyList(),
     val query: String = "",
     val loading: Boolean = true,
+    val iconsRevision: Int = 0,
     val editingPackage: String? = null,
     val limitInput: String = "",
     val saving: Boolean = false
@@ -31,6 +32,7 @@ data class AppsUiState(
 class AppsViewModel(private val container: AppContainer) : AppViewModel() {
     private val mutable = MutableStateFlow(AppsUiState())
     val state = mutable.asStateFlow()
+    val icons = container.appIcons
     init {
         execute { container.trackedApps.observeAll().collect { apps -> mutable.update { it.copy(tracked = apps) } } }
         refresh()
@@ -40,7 +42,7 @@ class AppsViewModel(private val container: AppContainer) : AppViewModel() {
             mutable.update { it.copy(loading = true) }
             try {
                 val apps = container.installedApps.read()
-                mutable.update { it.copy(installed = apps) }
+                mutable.update { it.copy(installed = apps, iconsRevision = it.iconsRevision + 1) }
             } finally { mutable.update { it.copy(loading = false) } }
         }
     }

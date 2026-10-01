@@ -1,6 +1,8 @@
 package com.ansa1r.projectadhd.ui.apps
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.items
@@ -32,10 +34,12 @@ fun AppsScreen(viewModel: AppsViewModel) {
         if (!state.loading && state.rows.isEmpty()) item { Text(stringResource(R.string.apps_empty)) }
         items(state.rows, key = { it.installed.packageName }) { row ->
             SectionCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    InstalledAppIcon(row.installed.packageName, row.available, state.iconsRevision, viewModel.icons)
                     Column(Modifier.weight(1f)) {
                         Text(row.installed.displayName, style = MaterialTheme.typography.titleMedium)
-                        Text(row.installed.packageName, style = MaterialTheme.typography.bodySmall)
+                        Text(row.installed.packageName, style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Checkbox(checked = row.tracked?.enabled == true,
                         onCheckedChange = { viewModel.select(row, it) },

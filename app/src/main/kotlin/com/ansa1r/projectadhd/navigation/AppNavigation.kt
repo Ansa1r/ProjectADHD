@@ -1,11 +1,15 @@
 package com.ansa1r.projectadhd.navigation
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.dp
+import com.ansa1r.projectadhd.ui.components.LocalCalmSurfaces
+import com.ansa1r.projectadhd.ui.mascot.MascotBackdrop
+import com.ansa1r.projectadhd.ui.theme.BrandColors
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -62,7 +66,7 @@ fun AppNavigation(container: AppContainer, habitsRequest: Int = 0) {
                 })
         },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(containerColor = BrandColors.Background, tonalElevation = 0.dp) {
                 Screen.entries.forEach { screen ->
                     NavigationBarItem(selected = route == screen.route,
                         onClick = { nav.navigate(screen.route) {
@@ -71,17 +75,20 @@ fun AppNavigation(container: AppContainer, habitsRequest: Int = 0) {
                             restoreState = true
                         } },
                         icon = { Icon(painterResource(screen.icon), contentDescription = null) },
+                        colors = NavigationBarItemDefaults.colors(indicatorColor = BrandColors.PurpleSurface,
+                            selectedIconColor = BrandColors.Text, selectedTextColor = BrandColors.Text),
                         label = { Text(stringResource(screen.title), maxLines = 1, overflow = TextOverflow.Ellipsis) })
                 }
             }
         }
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
+        MascotBackdrop(Modifier.fillMaxSize().padding(padding), enabled = route != Screen.SETTINGS.route) {
             NavHost(navController = nav, startDestination = Screen.HOME.route) {
                 composable(Screen.HOME.route) {
-                    HomeScreen(viewModel(factory = factory { HomeViewModel(container) })) {
-                        nav.navigate(Screen.HABITS.route) { launchSingleTop = true }
-                    }
+                    HomeScreen(viewModel(factory = factory { HomeViewModel(container) }),
+                        openHabits = { nav.navigate(Screen.HABITS.route) { launchSingleTop = true } },
+                        openApps = { nav.navigate(Screen.APPS.route) { launchSingleTop = true } },
+                        openStats = { nav.navigate(Screen.STATS.route) { launchSingleTop = true } })
                 }
                 composable(Screen.HABITS.route) {
                     HabitsScreen(viewModel(factory = factory { HabitsViewModel(container) }))
@@ -93,7 +100,9 @@ fun AppNavigation(container: AppContainer, habitsRequest: Int = 0) {
                     StatsScreen(viewModel(factory = factory { StatsViewModel(container) }))
                 }
                 composable(Screen.SETTINGS.route) {
-                    SettingsScreen(viewModel(factory = factory { SettingsViewModel(container) }))
+                    CompositionLocalProvider(LocalCalmSurfaces provides true) {
+                        SettingsScreen(viewModel(factory = factory { SettingsViewModel(container) }))
+                    }
                 }
                 if (BuildConfig.DEBUG) composable("debug") {
                     DebugScreen(viewModel(factory = factory { DebugViewModel(container) }))

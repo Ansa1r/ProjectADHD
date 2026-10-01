@@ -1,0 +1,7 @@
+PASS: XML and resource references
+PASS: catalog aliases, package roots, old names, complete Gradle wrapper
+PASS: permissions, foreground service, package visibility and disabled backup
+PASS: actual MIGRATION_1_2 SQL preserves all four Stage 1 tables and matches schema 2 columns, defaults, keys and indices
+PASS: 21 DAO queries prepared; uniqueness, local-day counts, disabled habits, cascade and event order checked on SQLite
+PASS: original background/idle/blocking hashes; prepared RGBA praise asset hash
+Source checks passed. Kotlin compilation, JUnit, Android lint and device behavior are NOT checked by this script.

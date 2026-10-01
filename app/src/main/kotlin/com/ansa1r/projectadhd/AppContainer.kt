@@ -1,6 +1,7 @@
 package com.ansa1r.projectadhd
 
 import android.content.Context
+import com.ansa1r.projectadhd.ui.apps.AppIconLoader
 import androidx.room.Room
 import com.ansa1r.projectadhd.data.local.Migrations
 import com.ansa1r.projectadhd.data.repository.BlockRepository
@@ -34,6 +35,7 @@ class AppContainer(context: Context) {
     val permissions = PermissionManager(appContext)
     val excludedApps = ExcludedApps(appContext)
     val overlays = OverlayController(appContext, permissions, excludedApps)
+    val appIcons = AppIconLoader(appContext)
     val installedApps = InstalledAppReader(appContext, excludedApps)
     val usage = UsageStatsReader(appContext, permissions)
     val monitoring = MonitoringState()

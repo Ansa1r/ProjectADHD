@@ -24,65 +24,77 @@ import com.ansa1r.projectadhd.ui.components.*
 import com.ansa1r.projectadhd.ui.mascot.*
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel, openHabits: () -> Unit = {}) {
+fun HomeScreen(
+    viewModel: HomeViewModel,
+    openHabits: () -> Unit = {},
+    openApps: () -> Unit = {},
+    openStats: () -> Unit = {}
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { viewModel.refresh() }
     RefreshOnResume(viewModel::refresh)
-    MascotBackdrop(Modifier.fillMaxSize()) {
-        ScreenList {
-            item { MessageBanner(viewModel) }
-            item {
-                Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    MascotView(MascotMood.IDLE, Modifier.size(192.dp))
-                    Text(stringResource(R.string.home_greeting), style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onBackground, textAlign = TextAlign.Center)
-                }
+    ScreenList {
+        item { MessageBanner(viewModel) }
+        item {
+            Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                MascotView(MascotMood.IDLE, Modifier.size(192.dp))
+                Text(stringResource(R.string.home_greeting), style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onBackground, textAlign = TextAlign.Center)
             }
-            item {
-                SectionCard {
-                    Text(stringResource(R.string.today_progress, state.tasks.completed, state.tasks.total), style = MaterialTheme.typography.titleLarge)
-                    if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
-                    else LinearProgressIndicator(progress = { if (state.tasks.total == 0) 0f else state.tasks.completed.toFloat() / state.tasks.total }, modifier = Modifier.fillMaxWidth())
-                    Text(stringResource(if (state.tasks.total == 0) R.string.no_tasks_hint else if (state.tasks.incomplete == 0) R.string.praise_body else R.string.tasks_remaining, state.tasks.incomplete))
-                    Button(onClick = openHabits, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.go_to_tasks)) }
-                }
+        }
+        item {
+            SectionCard {
+                Text(stringResource(R.string.today_progress, state.tasks.completed, state.tasks.total), style = MaterialTheme.typography.titleLarge)
+                if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
+                else LinearProgressIndicator(progress = { if (state.tasks.total == 0) 0f else state.tasks.completed.toFloat() / state.tasks.total }, modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.secondary,
+                    trackColor = MaterialTheme.colorScheme.primaryContainer)
+                Text(stringResource(if (state.tasks.total == 0) R.string.no_tasks_hint else if (state.tasks.incomplete == 0) R.string.praise_body else R.string.tasks_remaining, state.tasks.incomplete))
+                BrandButton(onClick = openHabits, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.go_to_tasks)) }
             }
-            if (state.blocks.isNotEmpty()) item {
-                SectionCard {
-                    Text(stringResource(R.string.active_blocks), style = MaterialTheme.typography.titleMedium)
-                    Text(state.blocks.joinToString { it.appName })
-                    Text(stringResource(R.string.block_instruction))
-                }
+        }
+        item {
+            MenuCard(stringResource(R.string.home_apps_title), stringResource(R.string.home_apps_body),
+                R.drawable.ic_nav_apps, openApps)
+        }
+        item {
+            MenuCard(stringResource(R.string.home_stats_title), stringResource(R.string.home_stats_body),
+                R.drawable.ic_nav_stats, openStats)
+        }
+        if (state.blocks.isNotEmpty()) item {
+            SectionCard {
+                Text(stringResource(R.string.active_blocks), style = MaterialTheme.typography.titleMedium)
+                Text(state.blocks.joinToString { it.appName })
+                Text(stringResource(R.string.block_instruction))
             }
-            item {
-                SectionCard {
-                    Detail(stringResource(R.string.monitoring), monitorText(state.monitoring.status))
-                    MonitorIssueText(state.monitoring.issue)
-                    if (state.monitoring.status == MonitorStatus.STOPPED) {
-                        Button(onClick = viewModel::start, enabled = state.permissions.canMonitor && !state.loading,
-                            modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.start_monitoring)) }
-                        if (!state.permissions.canMonitor) Text(stringResource(R.string.monitoring_requirements))
-                    } else OutlinedButton(onClick = viewModel::stop, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.stop_monitoring)) }
-                    if (!state.permissions.overlay || !state.permissions.overlaySupported) Text(stringResource(R.string.overlay_fallback_hint))
-                }
+        }
+        item {
+            SectionCard {
+                Detail(stringResource(R.string.monitoring), monitorText(state.monitoring.status))
+                MonitorIssueText(state.monitoring.issue)
+                if (state.monitoring.status == MonitorStatus.STOPPED) {
+                    BrandButton(onClick = viewModel::start, enabled = state.permissions.canMonitor && !state.loading,
+                        modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.start_monitoring)) }
+                    if (!state.permissions.canMonitor) Text(stringResource(R.string.monitoring_requirements))
+                } else OutlinedButton(onClick = viewModel::stop, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.stop_monitoring)) }
+                if (!state.permissions.overlay || !state.permissions.overlaySupported) Text(stringResource(R.string.overlay_fallback_hint))
             }
-            item {
-                SectionCard {
-                    Text(stringResource(R.string.permissions_title), style = MaterialTheme.typography.titleMedium)
-                    Detail(stringResource(R.string.usage_access), permissionText(state.permissions.usageAccess))
-                    if (!state.permissions.usageAccess) OutlinedButton(onClick = viewModel::usageSettings) { Text(stringResource(R.string.grant_usage_access)) }
-                    Detail(stringResource(R.string.overlay_permission), permissionText(state.permissions.overlay && state.permissions.overlaySupported))
-                    if (state.permissions.overlaySupported && !state.permissions.overlay) OutlinedButton(onClick = viewModel::overlaySettings) { Text(stringResource(R.string.grant_overlay)) }
-                    Detail(stringResource(R.string.notification_permission), permissionText(state.permissions.notifications))
-                    if (!state.permissions.notifications) OutlinedButton(onClick = {
-                        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context,
-                            Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        else viewModel.notificationSettings()
-                    }) { Text(stringResource(R.string.grant_notifications)) }
-                    if (!state.permissions.monitoringChannel || !state.permissions.interventionChannel) {
-                        OutlinedButton(onClick = viewModel::notificationSettings) { Text(stringResource(R.string.notification_settings)) }
-                    }
+        }
+        item {
+            SectionCard {
+                Text(stringResource(R.string.permissions_title), style = MaterialTheme.typography.titleMedium)
+                Detail(stringResource(R.string.usage_access), permissionText(state.permissions.usageAccess))
+                if (!state.permissions.usageAccess) OutlinedButton(onClick = viewModel::usageSettings) { Text(stringResource(R.string.grant_usage_access)) }
+                Detail(stringResource(R.string.overlay_permission), permissionText(state.permissions.overlay && state.permissions.overlaySupported))
+                if (state.permissions.overlaySupported && !state.permissions.overlay) OutlinedButton(onClick = viewModel::overlaySettings) { Text(stringResource(R.string.grant_overlay)) }
+                Detail(stringResource(R.string.notification_permission), permissionText(state.permissions.notifications))
+                if (!state.permissions.notifications) OutlinedButton(onClick = {
+                    if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context,
+                        Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    else viewModel.notificationSettings()
+                }) { Text(stringResource(R.string.grant_notifications)) }
+                if (!state.permissions.monitoringChannel || !state.permissions.interventionChannel) {
+                    OutlinedButton(onClick = viewModel::notificationSettings) { Text(stringResource(R.string.notification_settings)) }
                 }
             }
         }
