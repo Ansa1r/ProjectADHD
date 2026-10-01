@@ -1,21 +1,14 @@
 package com.ansa1r.projectadhd.ui.home
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ansa1r.projectadhd.R
 import com.ansa1r.projectadhd.domain.model.MascotMood
@@ -28,11 +21,10 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     openHabits: () -> Unit = {},
     openApps: () -> Unit = {},
-    openStats: () -> Unit = {}
+    openStats: () -> Unit = {},
+    openPermissions: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { viewModel.refresh() }
     RefreshOnResume(viewModel::refresh)
     ScreenList {
         item { MessageBanner(viewModel) }
@@ -75,27 +67,14 @@ fun HomeScreen(
                 if (state.monitoring.status == MonitorStatus.STOPPED) {
                     BrandButton(onClick = viewModel::start, enabled = state.permissions.canMonitor && !state.loading,
                         modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.start_monitoring)) }
-                    if (!state.permissions.canMonitor) Text(stringResource(R.string.monitoring_requirements))
+                    if (!state.permissions.canMonitor) Text(stringResource(R.string.home_start_permission_hint))
                 } else OutlinedButton(onClick = viewModel::stop, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.stop_monitoring)) }
-                if (!state.permissions.overlay || !state.permissions.overlaySupported) Text(stringResource(R.string.overlay_fallback_hint))
             }
         }
-        item {
+        if (!state.permissions.canMonitor || !state.permissions.overlay) item {
             SectionCard {
-                Text(stringResource(R.string.permissions_title), style = MaterialTheme.typography.titleMedium)
-                Detail(stringResource(R.string.usage_access), permissionText(state.permissions.usageAccess))
-                if (!state.permissions.usageAccess) OutlinedButton(onClick = viewModel::usageSettings) { Text(stringResource(R.string.grant_usage_access)) }
-                Detail(stringResource(R.string.overlay_permission), permissionText(state.permissions.overlay && state.permissions.overlaySupported))
-                if (state.permissions.overlaySupported && !state.permissions.overlay) OutlinedButton(onClick = viewModel::overlaySettings) { Text(stringResource(R.string.grant_overlay)) }
-                Detail(stringResource(R.string.notification_permission), permissionText(state.permissions.notifications))
-                if (!state.permissions.notifications) OutlinedButton(onClick = {
-                    if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context,
-                        Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    else viewModel.notificationSettings()
-                }) { Text(stringResource(R.string.grant_notifications)) }
-                if (!state.permissions.monitoringChannel || !state.permissions.interventionChannel) {
-                    OutlinedButton(onClick = viewModel::notificationSettings) { Text(stringResource(R.string.notification_settings)) }
-                }
+                Text(stringResource(R.string.home_permissions_hint), style = MaterialTheme.typography.bodyMedium)
+                TextButton(onClick = openPermissions) { Text(stringResource(R.string.open_permissions)) }
             }
         }
     }

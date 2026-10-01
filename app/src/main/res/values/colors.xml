@@ -9,4 +9,8 @@
     <color name="white">#FFFFFFFF</color>
     <color name="launcher_purple">#FF300A46</color>
     <color name="launcher_blue">#FF002080</color>
+    <color name="startup_top">#FFD2E1DE</color>
+    <color name="startup_green">#FF97EA93</color>
+    <color name="startup_blue">#FF54A7D2</color>
 </resources>
+

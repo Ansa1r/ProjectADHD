@@ -168,4 +168,30 @@
     <string name="home_apps_body">Выбери приложения и настрой время для отдыха</string>
     <string name="home_stats_title">Мой день</string>
     <string name="home_stats_body">Время в приложениях и история пауз</string>
+    <string name="profile">Профиль</string>
+    <string name="profile_placeholder">Функции профиля появятся в следующих версиях ProjectADHD.</string>
+    <string name="blocking_settings">Экран блокировки</string>
+    <string name="interface_theme">Тема интерфейса</string>
+    <string name="theme_placeholder">Настройки темы появятся в следующих версиях ProjectADHD.</string>
+    <string name="privacy">Конфиденциальность</string>
+    <string name="privacy_placeholder">Настройки конфиденциальности появятся в следующих версиях ProjectADHD.</string>
+    <string name="developer">Для разработчика</string>
+    <string name="usage_access_explanation">Нужен для определения времени использования выбранных приложений.</string>
+    <string name="overlay_explanation">Позволяет показать маскота и экран блокировки поверх выбранного приложения.</string>
+    <string name="notification_explanation">Нужно для постоянного уведомления мониторинга и напоминаний, когда окно блокировки недоступно.</string>
+    <string name="channels_explanation">Для мониторинга должны быть включены оба канала: состояние мониторинга и напоминания о лимитах.</string>
+    <string name="allow_permission">Разрешить</string>
+    <string name="open_permissions">Открыть разрешения</string>
+    <string name="home_permissions_hint">Для полной работы приложения нужны разрешения. Их можно настроить в одном месте.</string>
+    <string name="home_start_permission_hint">Проверь разрешения в настройках, чтобы включить мониторинг.</string>
+    <string name="blocking_opacity">Прозрачность затемнения</string>
+    <string name="opacity_explanation">Больше значение — плотнее фиолетовый слой. Маскот, текст и кнопка всегда непрозрачные. Изменения применяются без перезапуска.</string>
+    <string name="percent_value">%1$d%%</string>
+    <string name="opacity_preview">Предпросмотр</string>
+    <string name="preview_content">Пример содержимого приложения</string>
+    <string name="opacity_saving">Сохранение…</string>
+    <string name="opacity_saved">Сохранено. Перезапуск не нужен.</string>
+    <string name="opacity_save_error">Не удалось сохранить прозрачность. Проверь свободное место и попробуй снова.</string>
+    <string name="startup_mascot_description">Счастливый маскот ProjectADHD</string>
 </resources>
+

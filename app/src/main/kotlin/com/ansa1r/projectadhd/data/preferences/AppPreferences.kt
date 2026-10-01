@@ -1,6 +1,10 @@
 package com.ansa1r.projectadhd.data.preferences
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import com.ansa1r.projectadhd.domain.settings.BlockingOpacity
+import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -10,8 +14,9 @@ import kotlinx.coroutines.flow.map
 
 private val Context.settingsDataStore by preferencesDataStore(name = "settings")
 
-class AppPreferences(context: Context) {
-    private val store = context.applicationContext.settingsDataStore
+class AppPreferences(private val store: DataStore<Preferences>) {
+    constructor(context: Context) : this(context.applicationContext.settingsDataStore)
+    private val blockingOpacity = intPreferencesKey("blocking_overlay_opacity_percent")
     private val cooldown = intPreferencesKey("cooldown_minutes")
     private val lastIntervention = longPreferencesKey("last_intervention_at")
     private val praiseCooldown = intPreferencesKey("praise_cooldown_minutes")
@@ -24,8 +29,15 @@ class AppPreferences(context: Context) {
             lastInterventionAt = prefs[lastIntervention],
             lastMonitoringStartedAt = prefs[lastStarted],
             praiseCooldownMinutes = (prefs[praiseCooldown] ?: 30).coerceIn(1, 180),
-            lastPraiseAt = prefs[lastPraise]
+            lastPraiseAt = prefs[lastPraise],
+            blockingOverlayOpacityPercent = BlockingOpacity.normalize(prefs[blockingOpacity] ?: BlockingOpacity.DEFAULT_PERCENT)
         )
+    }
+
+    val blockingOverlayOpacity = settings.map { it.blockingOverlayOpacityPercent }.distinctUntilChanged()
+
+    suspend fun setBlockingOpacity(percent: Int) {
+        store.edit { it[blockingOpacity] = BlockingOpacity.normalize(percent) }
     }
 
     suspend fun setCooldown(minutes: Int) {

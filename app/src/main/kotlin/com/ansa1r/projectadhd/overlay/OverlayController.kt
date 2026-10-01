@@ -22,6 +22,7 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.ansa1r.projectadhd.BuildConfig
+import com.ansa1r.projectadhd.domain.settings.BlockingOpacity
 import com.ansa1r.projectadhd.MainActivity
 import com.ansa1r.projectadhd.domain.intervention.InterventionPayload
 import com.ansa1r.projectadhd.domain.model.MascotMood
@@ -42,7 +43,8 @@ sealed interface OverlayResult {
 data class OverlaySnapshot(
     val visible: Boolean = false, val packageName: String? = null,
     val mood: MascotMood? = null, val test: Boolean = false,
-    val lastError: String? = null, val testArmedUntil: Long? = null
+    val lastError: String? = null, val testArmedUntil: Long? = null,
+    val blockingOpacityPercent: Int = BlockingOpacity.DEFAULT_PERCENT
 )
 private data class OverlayContent(val payload: InterventionPayload, val mood: MascotMood, val test: Boolean)
 
@@ -58,10 +60,17 @@ class OverlayController(
     private var owner: OverlayOwner? = null
     private var manager: WindowManager? = null
     private var overlayContent by mutableStateOf<OverlayContent?>(null)
+    private var blockingOpacityPercent by mutableStateOf(BlockingOpacity.DEFAULT_PERCENT)
     private var foreground: String? = null
     private var appVisible = false
     private var armedMood: MascotMood? = null
     private val dismiss = Runnable { hide() }
+
+    fun setBlockingOpacity(percent: Int) {
+        check(Looper.myLooper() == Looper.getMainLooper())
+        blockingOpacityPercent = BlockingOpacity.normalize(percent)
+        mutable.update { it.copy(blockingOpacityPercent = blockingOpacityPercent) }
+    }
 
     fun appVisibility(visible: Boolean) {
         appVisible = visible
@@ -138,7 +147,7 @@ class OverlayController(
                 setContent {
                     ProjectADHDTheme {
                         overlayContent?.let { data ->
-                            if (data.mood == MascotMood.BLOCKING) BlockingContent(data.payload, data.test, ::openHabits)
+                            if (data.mood == MascotMood.BLOCKING) BlockingContent(data.payload, data.test, blockingOpacityPercent, ::openHabits)
                             else PraiseContent(data.test)
                         }
                     }
@@ -159,6 +168,8 @@ class OverlayController(
                 if (!blocking) alpha = if (Build.VERSION.SDK_INT >= 31) {
                     minOf(0.8f, windowContext.getSystemService(InputManager::class.java)?.maximumObscuringOpacityForTouch ?: 0.8f)
                 } else 0.8f
+                // BLOCK keeps window alpha=1: only its Compose scrim is translucent.
+                if (blocking) alpha = 1f
                 setTitle("ProjectADHD " + mood.name)
             }
             manager = wm; view = compose

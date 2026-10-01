@@ -14,8 +14,8 @@ android {
         applicationId = "com.ansa1r.projectadhd"
         minSdk = 24
         targetSdk = 37
-        versionCode = 3
-        versionName = "0.2.1-pre-alpha"
+        versionCode = 4
+        versionName = "0.2.2-pre-alpha"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -61,6 +61,7 @@ ksp {
 }
 
 dependencies {
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore.preferences)

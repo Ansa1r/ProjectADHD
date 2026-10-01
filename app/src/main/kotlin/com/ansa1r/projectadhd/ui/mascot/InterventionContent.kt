@@ -1,6 +1,11 @@
 package com.ansa1r.projectadhd.ui.mascot
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.text.font.FontWeight
+import com.ansa1r.projectadhd.domain.settings.BlockingOpacity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -12,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -22,34 +28,45 @@ import com.ansa1r.projectadhd.ui.components.BrandButton
 import com.ansa1r.projectadhd.ui.theme.BrandColors
 
 @Composable
-fun BlockingContent(payload: InterventionPayload, test: Boolean = false, openHabits: () -> Unit) {
-    MascotBackdrop(Modifier.fillMaxSize().clickable(
+fun BlockingScrim(opacityPercent: Int, modifier: Modifier = Modifier) {
+    Box(modifier.background(BrandColors.BlockingScrim.copy(alpha = BlockingOpacity.alpha(opacityPercent))))
+}
+
+@Composable
+fun BlockingContent(
+    payload: InterventionPayload,
+    test: Boolean = false,
+    opacityPercent: Int = BlockingOpacity.DEFAULT_PERCENT,
+    openHabits: () -> Unit
+) {
+    // This root is transparent. Only the separate scrim layer has configurable alpha.
+    Box(Modifier.fillMaxSize().clickable(
         interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {})) {
-        // Scrolling keeps the action reachable in landscape and with enlarged system fonts.
+        BlockingScrim(opacityPercent, Modifier.matchParentSize())
+        val shadow = Shadow(BrandColors.Background, Offset(0f, 2f), 6f)
         Column(Modifier.align(Alignment.Center).widthIn(max = 480.dp).fillMaxWidth()
-            .verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Surface(shape = RoundedCornerShape(32.dp), color = BrandColors.PurpleDeep,
-                contentColor = BrandColors.Text, border = BorderStroke(3.dp, BrandColors.Green)) {
-                Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                    MascotView(MascotMood.BLOCKING, Modifier.size(180.dp))
-                    Text(stringResource(R.string.block_title), style = MaterialTheme.typography.headlineMedium,
-                        textAlign = TextAlign.Center)
-                    Text(payload.appName, style = MaterialTheme.typography.titleMedium,
-                        color = BrandColors.Tertiary, textAlign = TextAlign.Center)
-                    Text(stringResource(R.string.block_elapsed, (payload.sessionDurationMillis / 60_000L).coerceAtLeast(0)),
-                        style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-                    Text(stringResource(R.string.tasks_remaining, payload.incompleteHabitCount),
-                        style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-                    Text(stringResource(R.string.block_instruction), style = MaterialTheme.typography.titleLarge,
-                        textAlign = TextAlign.Center)
-                    BrandButton(onClick = openHabits, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.go_to_tasks), textAlign = TextAlign.Center)
-                    }
-                    if (test) Text(stringResource(R.string.debug_block_timeout),
-                        style = MaterialTheme.typography.bodySmall, color = BrandColors.Muted, textAlign = TextAlign.Center)
-                }
+            .verticalScroll(rememberScrollState()).padding(28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            MascotView(MascotMood.BLOCKING, Modifier.size(180.dp))
+            Text(stringResource(R.string.block_title), color = BrandColors.Text,
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, shadow = shadow),
+                textAlign = TextAlign.Center)
+            Text(payload.appName, color = BrandColors.Text,
+                style = MaterialTheme.typography.titleMedium.copy(shadow = shadow), textAlign = TextAlign.Center)
+            Text(stringResource(R.string.block_elapsed, (payload.sessionDurationMillis / 60_000L).coerceAtLeast(0)),
+                color = BrandColors.Text, style = MaterialTheme.typography.titleMedium.copy(shadow = shadow),
+                textAlign = TextAlign.Center)
+            Text(stringResource(R.string.tasks_remaining, payload.incompleteHabitCount), color = BrandColors.Text,
+                style = MaterialTheme.typography.titleMedium.copy(shadow = shadow), textAlign = TextAlign.Center)
+            Text(stringResource(R.string.block_instruction), color = BrandColors.Text,
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, shadow = shadow),
+                textAlign = TextAlign.Center)
+            BrandButton(onClick = openHabits, modifier = Modifier.fillMaxWidth().testTag("blocking_task_button")) {
+                Text(stringResource(R.string.go_to_tasks), textAlign = TextAlign.Center)
             }
+            if (test) Text(stringResource(R.string.debug_block_timeout), color = BrandColors.Text,
+                style = MaterialTheme.typography.bodySmall.copy(shadow = shadow), textAlign = TextAlign.Center)
         }
     }
 }

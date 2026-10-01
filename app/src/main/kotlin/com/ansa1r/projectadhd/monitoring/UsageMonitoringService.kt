@@ -130,6 +130,7 @@ class UsageMonitoringService : Service() {
         val savedBlock = rawSession?.let { container.blocks.find(it.packageName) }
         val session = SessionAllowance.apply(rawSession, savedBlock?.releasedAt, now)
         val settings = container.preferences.settings.first()
+        container.overlays.setBlockingOpacity(settings.blockingOverlayOpacityPercent)
         val app = session?.let { container.trackedApps.find(it.packageName) }
         val tasks = container.blocks.today(now).summary
         val decision = container.engine.decide(InterventionInput(

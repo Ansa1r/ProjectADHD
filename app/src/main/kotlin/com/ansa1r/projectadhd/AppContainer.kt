@@ -21,8 +21,16 @@ import com.ansa1r.projectadhd.monitoring.PermissionManager
 import com.ansa1r.projectadhd.monitoring.UsageStatsReader
 import com.ansa1r.projectadhd.notification.NotificationHelper
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class AppContainer(context: Context) {
+    val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    var startupShown = false
     private val appContext = context.applicationContext
     private val database by lazy {
         Room.databaseBuilder(appContext, AppDatabase::class.java, "projectadhd.db").addMigrations(Migrations.MIGRATION_1_2).build()
@@ -35,6 +43,13 @@ class AppContainer(context: Context) {
     val permissions = PermissionManager(appContext)
     val excludedApps = ExcludedApps(appContext)
     val overlays = OverlayController(appContext, permissions, excludedApps)
+    init {
+        applicationScope.launch {
+            preferences.blockingOverlayOpacity
+                .catch { overlays.recordError("OPACITY_READ: " + it.javaClass.simpleName) }
+                .collect(overlays::setBlockingOpacity)
+        }
+    }
     val appIcons = AppIconLoader(appContext)
     val installedApps = InstalledAppReader(appContext, excludedApps)
     val usage = UsageStatsReader(appContext, permissions)

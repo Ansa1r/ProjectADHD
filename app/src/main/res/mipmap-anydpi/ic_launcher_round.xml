@@ -3,10 +3,11 @@
     <item>
         <shape android:shape="oval">
             <size android:width="48dp" android:height="48dp" />
-            <gradient android:angle="45" android:startColor="@color/launcher_blue" android:endColor="@color/launcher_purple" />
+            <gradient android:angle="270" android:startColor="@color/startup_top"
+                android:centerColor="@color/startup_green" android:centerY="0.48" android:endColor="@color/startup_blue" />
         </shape>
     </item>
-    <item>
-        <bitmap android:src="@drawable/mascot_idle" android:gravity="fill" android:filter="true" />
+    <item android:width="36dp" android:height="36dp" android:gravity="center">
+        <bitmap android:src="@drawable/mascot_startup" android:gravity="fill" android:filter="true" />
     </item>
 </layer-list>

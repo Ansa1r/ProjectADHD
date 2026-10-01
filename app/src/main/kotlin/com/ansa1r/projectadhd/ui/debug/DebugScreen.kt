@@ -42,6 +42,7 @@ fun DebugScreen(viewModel: DebugViewModel) {
                 Detail(stringResource(R.string.praise_cooldown), stringResource(R.string.minutes_value, state.settings.praiseCooldownMinutes))
                 Detail(stringResource(R.string.last_praise), timestampText(state.settings.lastPraiseAt))
                 Detail(stringResource(R.string.last_unlock), timestampText(state.lastUnlock))
+                Detail(stringResource(R.string.blocking_opacity), stringResource(R.string.percent_value, state.overlay.blockingOpacityPercent))
                 Detail(stringResource(R.string.overlay_visible), state.overlay.visible.toString())
                 Detail(stringResource(R.string.overlay_error), state.overlay.lastError ?: "—")
                 Detail(stringResource(R.string.debug_test_until), timestampText(state.overlay.testArmedUntil))

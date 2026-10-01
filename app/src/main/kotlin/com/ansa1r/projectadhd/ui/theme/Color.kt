@@ -4,6 +4,9 @@ import androidx.compose.ui.graphics.Color
 
 // Shared palette inspired by the supplied menu, background and mascot references.
 object BrandColors {
+    val PreviewSurface = Color(0xFFF0F3F8)
+    val PreviewInk = Color(0xFF304465)
+    val BlockingScrim = Color(0xFF461062)
     val Background = Color(0xFF19191B)
     val Surface = Color(0xFF241F2B)
     val SurfaceVariant = Color(0xFF34283E)

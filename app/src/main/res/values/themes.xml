@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.ProjectADHD" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.ProjectADHD" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">@color/launcher_purple</item>
+        <item name="android:colorAccent">@color/purple_200</item>
+    </style>
+    <style name="Theme.ProjectADHD.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/startup_green</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_mascot</item>
+        <item name="windowSplashScreenAnimationDuration">0</item>
+        <item name="postSplashScreenTheme">@style/Theme.ProjectADHD</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
 </resources>

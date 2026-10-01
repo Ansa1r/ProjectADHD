@@ -7,5 +7,16 @@ enum class Screen(val route: String, val title: Int, val icon: Int) {
     HABITS("habits", R.string.habits, R.drawable.ic_nav_habits),
     APPS("apps", R.string.apps, R.drawable.ic_nav_apps),
     STATS("stats", R.string.stats, R.drawable.ic_nav_stats),
-    SETTINGS("settings", R.string.settings, R.drawable.ic_nav_settings)
+    PROFILE("profile", R.string.profile, R.drawable.ic_nav_profile)
+}
+
+object SettingsRoutes {
+    const val ROOT = "settings"
+    const val PERMISSIONS = "settings/permissions"
+    const val BLOCKING = "settings/blocking"
+    const val THEME = "settings/theme"
+    const val PRIVACY = "settings/privacy"
+    const val DEVELOPER = "settings/developer"
+    const val DEBUG = "debug"
+    fun isSettings(route: String) = route == ROOT || route.startsWith("$ROOT/")
 }

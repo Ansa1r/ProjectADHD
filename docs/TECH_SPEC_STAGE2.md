@@ -1,12 +1,12 @@
 # Техническая спецификация Stage 2
 
-База: `Ansa1r/ProjectADHD`, commit `a4ca37a6e72fc0a7a8ee6c735f911c2cb5c17cf0`. Текущие рабочие исходники находятся в `app/src/*/kotlin`; унаследованные шаблоны `src/*/java` сохраняются в копии, но исключены настройкой sourceSets. Все активные исходники используют `com.ansa1r.projectadhd`.
+Актуализировано для Stage 2 UI Revision, 2026-10-01. База: `Ansa1r/ProjectADHD`, commit `d18fa8bdf499199ff8902b025cbea7b11d29ba06`. Текущие рабочие исходники находятся в `app/src/*/kotlin`; унаследованные шаблоны `src/*/java` сохраняются в копии, но исключены настройкой sourceSets. Все активные исходники используют `com.ansa1r.projectadhd`.
 
 ## Компоненты
 
 | Компонент | Реальная ответственность |
 | --- | --- |
-| AppContainer | Единый Room/AppPreferences, репозитории, monitoring state/controller, OverlayController |
+| AppContainer | Единый Room/AppPreferences, репозитории, monitoring state/controller, OverlayController; application-scope Flow прозрачности |
 | HabitRepository | CRUD и текущий день; отметка выполнения + release в одной Room-транзакции |
 | BlockRepository | Создать/проверить/закрыть устойчивую блокировку, записать историю атомарно |
 | InterventionEngine | Pure Kotlin: NONE/BLOCK/PRAISE без Android и побочных действий |
@@ -21,7 +21,7 @@
 | MascotView/MascotBackdrop | Три отдельных PNG, исходный фон с Crop на всех основных экранах кроме Settings |
 | BrandComponents / Color / Theme | Фиолетовые карточки и кнопки, центральная палитра; LocalCalmSurfaces для Settings |
 | AppIconLoader / InstalledAppIcon | PackageManager → ограниченный bitmap на IO → Compose, LRU 4 MiB, запасной значок |
-| Home/Settings/Debug ViewModels | StateFlow, жизненный цикл UI, разрешения, диагностика и команды |
+| Home/Settings/Permissions/BlockingSettings/Debug ViewModels | StateFlow, жизненный цикл UI, раздельные разрешения/opacity, диагностика и команды |
 
 ## Источник задач
 
@@ -34,6 +34,8 @@
 `InterventionPayload` несёт package/name/duration/limit/incomplete; движок не знает о Compose, Room, WindowManager и NotificationManager. Проверка release предшествует решению в сервисе.
 
 ## Room 2 и миграция
+
+UI Revision не меняет Room: entities, DAO, repository, schema JSON и MIGRATION_1_2 сохранены побайтово. Описанная ниже миграция относится к исходному Stage 2, а не к текущей UI-ревизии.
 
 Исходные таблицы: `habits`, `habit_completions`, `tracked_apps`, `intervention_events`. Новая `block_sessions` содержит:
 
@@ -78,7 +80,7 @@ HabitRepository устанавливает время внутри транза�
 
 Controller повторно проверяет permission перед show. API 26+: TYPE_APPLICATION_OVERLAY. API 30+: display/window context. ComposeView получает отдельные LifecycleOwner, SavedStateRegistryOwner и ViewModelStoreOwner. Hide удаляет view, отменяет auto-dismiss, disposeComposition и уничтожает owners; повторный show того же BLOCK обновляет payload, не создаёт второе окно.
 
-BLOCK: MATCH_PARENT, FLAG_NOT_FOCUSABLE, touch-consuming Compose root, исходный background и blocking PNG; контент прокручивается на небольших экранах/при большом шрифте. Системные панели не скрываются. Button использует OPEN_HABITS с CLEAR_TOP/SINGLE_TOP и NEW_TASK, не изменяя BlockSession.
+BLOCK: MATCH_PARENT по обеим осям, FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT, Window alpha=1. Прозрачный touch-consuming Compose root содержит отдельный фиолетовый scrim и непрозрачные blocking PNG/текст/кнопку. Scrim alpha=0.30–0.90, default 0.65; фон 07 не используется. Контент прокручивается на небольших экранах/при большом шрифте. Системные панели не скрываются. Button использует OPEN_HABITS с CLEAR_TOP/SINGLE_TOP и NEW_TASK, не изменяя BlockSession.
 
 PRAISE: WRAP_CONTENT по высоте, FLAG_NOT_FOCUSABLE | FLAG_NOT_TOUCHABLE, alpha <= системного maximum obscuring opacity (на Android 12+ читается из InputManager). Автоскрытие 4 секунды. Это ограничение необходимо, чтобы Android не блокировал касания под непрозрачным нетактильным overlay. Окно скрывается раньше при смене приложения.
 
@@ -94,17 +96,17 @@ DataStore сохраняет отдельно `last_praise_at`/`praise_cooldown_
 
 ## Debug и UI
 
-Home показывает idle-маскота, today progress, active blocked app names, monitoring, три разрешения и переходы к Habits/Apps/Stats. Settings содержит независимые интервалы praise/fallback и аварийный STOP. Debug показывает пакеты, session/limit, summary, decision, все active sessions с baseline/startedAt, last unlock/praise, permission, registered window и последнюю ошибку.
+Home показывает idle-маскота, today progress, active blocked app names, monitoring, компактное предупреждение о разрешениях и переходы к Habits/Apps/Stats. В нижней панели ровно 5 иконок с contentDescription: Home/Habits/Apps/Stats/Profile. Settings открывается шестерёнкой Home и содержит отдельные Permissions, Blocking Screen, Theme, Privacy и Developer. Последний пункт ведёт в Debug и существует только в debug build. Profile, Theme и Privacy — реальные локальные заглушки. Интервалы praise/fallback перенесены в Blocking Screen, аварийный STOP остаётся в корне Settings. Debug показывает пакеты, session/limit, summary, decision, все active sessions с baseline/startedAt, last unlock/praise, permission, registered window и последнюю ошибку.
 
 Тестовые overlay не создают challenges/events и не меняют cooldown. Чтобы никогда не закрывать собственную Activity, кнопка вооружает тест на 30 секунд: пользователь открывает выбранное приложение; service показывает тест без ожидания лимита. BLOCK preview исчезает через 10 секунд, PRAISE через 4. Настоящее BLOCK имеет приоритет. Debug недоступен в release и не подменяет production decision.
 
 ## Оформление и assets
 
-`AppNavigation` оборачивает NavHost в `MascotBackdrop(enabled = route != settings)`. Поэтому фоном охвачены Home, Habits, Apps, Stats и Debug; Settings использует однотонный Background и `LocalCalmSurfaces=true`. BLOCK и PRAISE оборачиваются отдельно, так как живут в WindowManager. Фон рисуется с ContentScale.Crop и тёмным слоем alpha 0.3; никаких отдельных Activity/окон для фонового рисунка нет.
+`AppNavigation` оборачивает NavHost в `MascotBackdrop(enabled = !SettingsRoutes.isSettings(route))`. Фон 07 охватывает Home, Habits, Apps, Stats, Profile и Debug; Settings и все его подразделы используют однотонный Background и `LocalCalmSurfaces=true`. PRAISE сохраняет отдельный фон в WindowManager. BLOCK содержит только прозрачную подложку, регулируемый scrim и непрозрачный контент. Фон 07 рисуется с ContentScale.Crop и тёмным слоем alpha 0.3.
 
 `SectionCard`, `MenuCard`, `BrandButton` задают пурпурный fill, тёмно-фиолетовый border, скругления 20–24 dp, белый текст и небольшую elevation. Settings получает тихую тёмную поверхность. Цвета только в BrandColors, launcher — в Android `values/colors.xml`. BLOCK компонует настоящие Compose Text с длительностью в минутах, числом незавершённых задач, названием приложения и CTA «Посмотреть дела». Кнопка не меняет persistent challenge; длинный экран прокручивается.
 
-`MascotView` использует отдельный `mascot_praise.png`, подготовленный из happy-референса 03 встроенным imagegen удалением фона; alpha проверен. IDLE и BLOCKING — исходные assets 06/05. Подробное происхождение и prompt — ASSETS.md. Нет emoji, встроенного в PNG текста или сетевой загрузки assets. Простые анимации были опциональны; в этой версии нет дополнительных анимационных циклов.
+`MascotView` использует отдельный `mascot_praise.png`, подготовленный из happy-референса 03 встроенным imagegen удалением фона; alpha проверен. IDLE и BLOCKING — исходные assets 06/05. Подробное происхождение и prompt — ASSETS.md. Нет emoji, встроенного в PNG текста или сетевой загрузки assets. Startup использует отдельный прозрачный happy-asset из reference 08 и gradient из Android colors, не фон 07. Compose StartupHost: hold 420 мс → flip 300+300 мс → title hold 420 мс → fade 400 мс. Системный SplashScreen стилизован тем же asset, его exit fade — 120 мс без дополнительного hold. Отдельная SplashActivity не создаётся; CTA OPEN_HABITS пропускает анимацию. Полный сценарий и ограничения времени холодного старта — в STAGE2_UI_REVISION_REPORT.md.
 
 `AppIconLoader` существует в AppContainer и обслуживает только UI. В `Dispatchers.IO` он получает `getApplicationIcon(packageName)` и преобразует Drawable (включая adaptive/vector) через `toBitmap`; размер ограничен 32–192 px, кэш Bitmap — LruCache 4 MiB. Ключ содержит пакет, размер и revision списка. `produceState` отменяется при уходе элемента, учитывает новую ревизию/доступность; при NameNotFoundException/RuntimeException отображается встроенный нейтральный значок. Domain InstalledApp и Room Entity остаются без Drawable/Bitmap.
 
@@ -128,3 +130,9 @@ Launcher использует исходный idle PNG: adaptive XML разде
 
 - [Adaptive icon layers and safe zone](https://developer.android.com/develop/ui/compose/system/icon_design_adaptive).
 - [PackageManager.getApplicationIcon](https://developer.android.com/reference/android/content/pm/PackageManager#getApplicationIcon(java.lang.String)).
+
+## Live opacity
+
+`BlockingOpacity` нормализует целые значения в 30–90 с шагом 5; отсутствующий ключ даёт 65. `AppPreferences` хранит Int `blocking_overlay_opacity_percent` в прежнем Preferences DataStore `settings`. `BlockingSettingsViewModel` обновляет preview синхронно и сохраняет значение в applicationScope; номера запросов не дают устаревшему ответу откатить новый slider. Уже начатая запись завершается после ухода со страницы.
+
+`AppContainer.applicationScope` непрерывно собирает `blockingOverlayOpacity.distinctUntilChanged()` на Main и вызывает setter существующего `OverlayController`. Compose-observable поле обновляет показанный BLOCK без remove/addView, нового таймера или новой BlockSession. На следующем poll сервис также передаёт прочитанное settings значение перед показом. Production и debug/test BLOCK используют один `BlockingContent`; preview использует тот же scrim без WindowManager и без записей Room.

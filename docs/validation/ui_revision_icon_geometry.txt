@@ -1,0 +1,5 @@
+PNG mode RGBA 1254x1254; alpha range (0, 255)
+All pixels with alpha > 0, radial bounds from pixel centres:
+Adaptive radius 31.23180 dp < 33 dp
+Legacy radius 23.66046 dp < 24 dp
+Static geometry only; launcher render not tested.
