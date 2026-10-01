@@ -25,20 +25,18 @@ class BlockingOpacityContentTest {
     @get:Rule val compose = createComposeRule()
 
     @Test fun scrimBlendsWithUnderlyingContentButButtonStaysOpaque() {
-        val percent = mutableIntStateOf(30)
         compose.setContent {
             ProjectADHDTheme {
                 Box(Modifier.fillMaxSize().background(Color.White).testTag("scene")) {
                     BlockingContent(InterventionPayload("test.app", "Test", 60_000, 60_000, 2),
-                        opacityPercent = percent.intValue, openHabits = {})
+                        openHabits = {})
                 }
             }
         }
         compose.onNodeWithText("Посмотреть дела").performScrollTo()
-        for (value in listOf(30, 65, 90)) {
-            compose.runOnIdle { percent.intValue = value }
+        run {
             val pixels = compose.onNodeWithTag("scene").captureToImage().toPixelMap()
-            val alpha = value / 100f
+            val alpha = 0.85f
             val background = pixels[1, 1]
             assertEquals(1f - alpha + BrandColors.BlockingScrim.red * alpha, background.red, 0.025f)
             assertEquals(1f - alpha + BrandColors.BlockingScrim.green * alpha, background.green, 0.025f)

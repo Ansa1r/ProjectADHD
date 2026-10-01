@@ -11,7 +11,11 @@ data class HabitEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String,
     val createdAt: Long,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    @ColumnInfo(defaultValue = "30") val targetDurationMinutes: Int = 30,
+    @ColumnInfo(defaultValue = "'MANUAL'") val type: String = "MANUAL",
+    @ColumnInfo(defaultValue = "NULL") val linkedAppPackage: String? = null,
+    @ColumnInfo(defaultValue = "0") val activatedAt: Long = 0
 )
 
 @Entity(

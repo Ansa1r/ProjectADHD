@@ -32,26 +32,24 @@ import com.ansa1r.projectadhd.domain.model.TrackedApp
 
 class AppContainer(context: Context) {
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    var uiVisible: Boolean = false
+        private set
+    fun uiVisibility(visible: Boolean) { uiVisible = visible }
     val uiEntries = com.ansa1r.projectadhd.domain.startup.ForegroundEntryTracker()
     private val appContext = context.applicationContext
     private val database by lazy {
-        Room.databaseBuilder(appContext, AppDatabase::class.java, "projectadhd.db").addMigrations(Migrations.MIGRATION_1_2).build()
+        Room.databaseBuilder(appContext, AppDatabase::class.java, "projectadhd.db").addMigrations(Migrations.MIGRATION_1_2, Migrations.MIGRATION_2_3).build()
     }
     val blocks by lazy { BlockRepository(database) }
-    val habits by lazy { HabitRepository(database, blocks) }
+    val habits by lazy { HabitRepository(database, blocks, habitClock) }
     val trackedApps by lazy { TrackedAppRepository(database, blocks) }
     val interventions by lazy { InterventionRepository(database.interventions()) }
+    val habitClock = com.ansa1r.projectadhd.monitoring.AndroidHabitClock(appContext)
     val preferences = AppPreferences(appContext)
+    val avatars = com.ansa1r.projectadhd.data.repository.AvatarRepository(appContext, preferences)
     val permissions = PermissionManager(appContext)
     val excludedApps = ExcludedApps(appContext)
     val overlays = OverlayController(appContext, permissions, excludedApps)
-    init {
-        applicationScope.launch {
-            preferences.blockingOverlayOpacity
-                .catch { overlays.recordError("OPACITY_READ: " + it.javaClass.simpleName) }
-                .collect(overlays::setBlockingOpacity)
-        }
-    }
     val appIcons = AppIconLoader(appContext)
     val installedApps = InstalledAppReader(appContext, excludedApps)
     val usage = UsageStatsReader(appContext, permissions)
@@ -59,6 +57,30 @@ class AppContainer(context: Context) {
     val controller by lazy { MonitoringController(appContext, permissions, monitoring, overlays, blocks) }
     val notifications = NotificationHelper(appContext)
     val engine = InterventionEngine()
+    val habitRuntime by lazy { com.ansa1r.projectadhd.monitoring.HabitRuntime(appContext, habits, usage, permissions, habitClock) }
+    init {
+        overlays.confirmHabit = { id, yes -> applicationScope.launch {
+            try {
+                habits.confirm(id, yes)
+                val packageName = overlays.state.value.packageName
+                if (packageName != null && blocks.find(packageName)?.active != true) overlays.hideProductionBlock()
+                else if (!yes) overlays.clearConfirmation()
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+              catch (error: Exception) { overlays.recordError("HABIT_CONFIRM: " + error.javaClass.simpleName) }
+        } }
+        applicationScope.launch {
+            while (true) {
+                try {
+                    if (monitoring.state.value.status != com.ansa1r.projectadhd.monitoring.MonitorStatus.RUNNING) {
+                        if (uiVisible) habitRuntime.refresh() else habits.checkpointManual()
+                    }
+                }
+                catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                catch (error: Exception) { habitRuntime.failed(error) }
+                kotlinx.coroutines.delay(1_000)
+            }
+        }
+    }
     suspend fun saveTrackedSelection(apps: List<TrackedApp>) = controller.gate.withLock {
         require(apps.none { excludedApps.contains(it.packageName) })
         trackedApps.replaceSelection(apps)

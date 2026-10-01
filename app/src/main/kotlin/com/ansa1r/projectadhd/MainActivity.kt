@@ -50,12 +50,14 @@ class MainActivity : ComponentActivity() {
     }
     override fun onStart() {
         super.onStart()
+        container.uiVisibility(true)
         container.overlays.appVisibility(true)
         container.uiEntries.onStart()?.let { startupEntry = it }
     }
     override fun onStop() {
         startupEntry = 0L
         container.uiEntries.onStop(isChangingConfigurations)
+        container.uiVisibility(false)
         container.overlays.appVisibility(false)
         super.onStop()
     }

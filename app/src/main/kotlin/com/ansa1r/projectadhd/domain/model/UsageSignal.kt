@@ -1,6 +1,6 @@
 package com.ansa1r.projectadhd.domain.model
 
-enum class UsageSignalType { RESUMED, PAUSED, STOPPED, SCREEN_OFF, LOCKED, SHUTDOWN }
+enum class UsageSignalType { RESUMED, PAUSED, STOPPED, SCREEN_OFF, LOCKED, SHUTDOWN, STARTUP }
 
 data class UsageSignal(
     val timestamp: Long,

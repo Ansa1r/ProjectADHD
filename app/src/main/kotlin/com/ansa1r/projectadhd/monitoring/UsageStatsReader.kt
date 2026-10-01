@@ -27,6 +27,7 @@ class UsageStatsReader(context: Context, private val permissions: PermissionMana
                 UsageEvents.Event.ACTIVITY_STOPPED -> UsageSignalType.STOPPED
                 UsageEvents.Event.SCREEN_NON_INTERACTIVE -> UsageSignalType.SCREEN_OFF
                 UsageEvents.Event.KEYGUARD_SHOWN -> UsageSignalType.LOCKED
+                UsageEvents.Event.DEVICE_STARTUP -> UsageSignalType.STARTUP
                 UsageEvents.Event.DEVICE_SHUTDOWN -> UsageSignalType.SHUTDOWN
                 else -> null
             } ?: continue

@@ -1,5 +1,6 @@
 package com.ansa1r.projectadhd.ui.debug
 
+import com.ansa1r.projectadhd.domain.mascot.MascotProgression
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,6 +21,25 @@ fun DebugScreen(viewModel: DebugViewModel) {
     RefreshOnResume(viewModel::refresh)
     ScreenList {
         item { MessageBanner(viewModel) }
+        item { SectionCard {
+            Text("Stage 4 · Маскот", style = MaterialTheme.typography.titleLarge)
+            val level = MascotProgression.level(state.mascot.totalXp)
+            Detail("XP", state.mascot.totalXp.toString())
+            Detail("Level / next threshold / multiplier", "$level / ${MascotProgression.threshold(level)} / ${MascotProgression.multiplier(level)}")
+            Detail("Streak / last reward", "${state.mascot.streak} / ${state.mascot.lastStreakRewardDate ?: "—"}")
+            Detail("Last habit XP award", state.awards.firstOrNull { it.kind == "HABIT" }?.let { "${it.localDate}: +${it.awardedXp} XP (${it.eventKey})" } ?: "—")
+            Detail("Habit runtime error", state.habitRuntimeError ?: "—")
+            Detail("Legacy app conflicts (blocking suppressed)", state.conflicts.joinToString().ifEmpty { "—" })
+            Text("Для коротких проверок создайте привычку на 00:01. Тестовые кнопки overlay не начисляют XP.")
+        } }
+        items(state.habitDetails, key = { "habit:${it.id}" }) { habit -> SectionCard {
+            Text("${habit.title} · ${habit.type}")
+            Detail("Base / extra / effective minutes", "${habit.targetDurationMinutes} / ${habit.progress.extraTargetMinutes} / ${habit.targetDurationMinutes + habit.progress.extraTargetMinutes}")
+            Detail("Daily accumulated", durationText(habit.progress.accumulatedMillis))
+            Detail("State / awaiting confirmation", "${habit.progress.state} / ${habit.progress.state == com.ansa1r.projectadhd.domain.habits.HabitState.AWAITING_CONFIRMATION}")
+            Detail("Manual checkpoint / boot / session", "${habit.progress.checkpointElapsed} / ${habit.progress.bootCount} / ${durationText(habit.progress.sessionMillis)}")
+            Detail("Linked package / app time", "${habit.linkedAppPackage ?: "—"} / ${durationText(habit.progress.accumulatedMillis)}")
+        } }
         item {
             SectionCard {
                 Text(stringResource(R.string.debug_intro))
@@ -42,7 +62,7 @@ fun DebugScreen(viewModel: DebugViewModel) {
                 Detail(stringResource(R.string.praise_cooldown), stringResource(R.string.minutes_value, state.settings.praiseCooldownMinutes))
                 Detail(stringResource(R.string.last_praise), timestampText(state.settings.lastPraiseAt))
                 Detail(stringResource(R.string.last_unlock), timestampText(state.lastUnlock))
-                Detail(stringResource(R.string.blocking_opacity), stringResource(R.string.percent_value, state.overlay.blockingOpacityPercent))
+                Detail(stringResource(R.string.blocking_opacity), stringResource(R.string.percent_value, 85))
                 Detail(stringResource(R.string.overlay_visible), state.overlay.visible.toString())
                 Detail(stringResource(R.string.overlay_error), state.overlay.lastError ?: "—")
                 Detail(stringResource(R.string.debug_test_until), timestampText(state.overlay.testArmedUntil))
@@ -77,14 +97,14 @@ fun DebugScreen(viewModel: DebugViewModel) {
         }
         item {
             SectionCard {
-                OutlinedButton(onClick = viewModel::refresh) { Text(stringResource(R.string.refresh)) }
-                OutlinedButton(onClick = viewModel::testNotification) { Text(stringResource(R.string.test_notification)) }
-                OutlinedButton(onClick = viewModel::simulate) { Text(stringResource(R.string.simulate_intervention)) }
-                OutlinedButton(onClick = viewModel::testBlock) { Text(stringResource(R.string.debug_block_test)) }
-                OutlinedButton(onClick = viewModel::testPraise) { Text(stringResource(R.string.debug_praise_test)) }
+                BrandOutlinedButton(onClick = viewModel::refresh) { Text(stringResource(R.string.refresh)) }
+                BrandOutlinedButton(onClick = viewModel::testNotification) { Text(stringResource(R.string.test_notification)) }
+                BrandOutlinedButton(onClick = viewModel::simulate) { Text(stringResource(R.string.simulate_intervention)) }
+                BrandOutlinedButton(onClick = viewModel::testBlock) { Text(stringResource(R.string.debug_block_test)) }
+                BrandOutlinedButton(onClick = viewModel::testPraise) { Text(stringResource(R.string.debug_praise_test)) }
                 Text(stringResource(R.string.debug_test_hint))
-                OutlinedButton(onClick = viewModel::clearBlocks) { Text(stringResource(R.string.clear_blocks)) }
-                OutlinedButton(onClick = viewModel::stop) { Text(stringResource(R.string.stop_monitoring)) }
+                BrandOutlinedButton(onClick = viewModel::clearBlocks) { Text(stringResource(R.string.clear_blocks)) }
+                BrandOutlinedButton(onClick = viewModel::stop) { Text(stringResource(R.string.stop_monitoring)) }
                 Text(stringResource(R.string.simulation_hint))
                 state.simulation?.let { Detail(stringResource(R.string.simulation_result), decisionText(it)) }
                 TextButton(onClick = { confirmClear = true }) { Text(stringResource(R.string.clear_history)) }

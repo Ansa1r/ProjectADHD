@@ -45,3 +45,17 @@ fun dayBounds(now: Long, zone: TimeZone = TimeZone.getDefault()): DayBounds {
 fun currentDayBoundsFlow() = flow {
     while (true) { emit(dayBounds(System.currentTimeMillis())); delay(1_000) }
 }.distinctUntilChanged()
+
+fun nextDayKey(date: String): String {
+    val parser = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT)
+    return Calendar.getInstance().run {
+        time = requireNotNull(parser.parse(date))
+        add(Calendar.DAY_OF_YEAR, 1)
+        parser.format(time)
+    }
+}
+
+fun dateBounds(date: String): DayBounds {
+    val parsed = requireNotNull(SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).parse(date))
+    return dayBounds(parsed.time)
+}

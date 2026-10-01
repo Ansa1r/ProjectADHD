@@ -8,18 +8,30 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-data class EditProfileState(val input: String = "", val loading: Boolean = true, val saving: Boolean = false, val saved: Boolean = false) {
+data class EditProfileState(val avatar: String? = null, val importingAvatar: Boolean = false, val input: String = "", val loading: Boolean = true, val saving: Boolean = false, val saved: Boolean = false) {
     val valid: Boolean get() = Nickname.valid(input)
 }
 class EditProfileViewModel(private val container: AppContainer) : AppViewModel() {
     private val mutable = MutableStateFlow(EditProfileState())
     val state = mutable.asStateFlow()
     private var edited = false
-    init { execute {
+    init {
+        execute { container.avatars.file.collect { path -> mutable.update { it.copy(avatar = path) } } }
+        execute {
         container.preferences.nickname.collect { nickname ->
             mutable.update { it.copy(input = if (edited) it.input else nickname.orEmpty(), loading = false) }
         }
     } }
+    fun changeAvatar(uri: android.net.Uri) {
+        if (mutable.value.importingAvatar) return
+        mutable.update { it.copy(importingAvatar = true) }
+        container.applicationScope.launch {
+            try { container.avatars.saveFromPicker(uri) }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { inform(R.string.avatar_error) }
+            finally { mutable.update { it.copy(importingAvatar = false) } }
+        }
+    }
     fun change(value: String) {
         if (!mutable.value.loading && !mutable.value.saving) {
             edited = true

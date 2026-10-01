@@ -94,6 +94,7 @@ class UsageMonitoringService : Service() {
         val permissions = container.permissions.state()
         if (!permissions.usageAccess) return MonitorIssue.USAGE_ACCESS
         if (!permissions.canMonitor) return MonitorIssue.NOTIFICATIONS
+        try { container.habitRuntime.refresh() } catch (_: SecurityException) { return MonitorIssue.USAGE_ACCESS }
         val now = System.currentTimeMillis()
         val elapsed = SystemClock.elapsedRealtime()
         if (lastWall != 0L && abs((now - lastWall) - (elapsed - lastElapsed)) > 5_000) {
@@ -130,7 +131,6 @@ class UsageMonitoringService : Service() {
         val savedBlock = rawSession?.let { container.blocks.find(it.packageName) }
         val session = SessionAllowance.apply(rawSession, savedBlock?.releasedAt, now)
         val settings = container.preferences.settings.first()
-        container.overlays.setBlockingOpacity(settings.blockingOverlayOpacityPercent)
         val app = session?.let { container.trackedApps.find(it.packageName) }
         val tasks = container.blocks.today(now).summary
         val decision = container.engine.decide(InterventionInput(
@@ -139,7 +139,7 @@ class UsageMonitoringService : Service() {
             tasks = tasks, activeBlock = savedBlock?.takeIf { it.active },
             lastPraiseMillis = settings.lastPraiseAt,
             praiseCooldownMillis = settings.praiseCooldownMinutes * 60_000L,
-            excluded = session?.let { container.excludedApps.contains(it.packageName) } == true,
+            excluded = session?.let { container.excludedApps.contains(it.packageName) || container.habits.hasLinkedPackage(it.packageName) } == true,
             monitoringEnabled = !container.controller.stopRequested
         ))
         if (container.controller.stopRequested) return MonitorIssue.NONE
@@ -154,7 +154,11 @@ class UsageMonitoringService : Service() {
                 val block = container.blocks.start(decision.payload, now)
                 if (block != null && !container.controller.stopRequested) {
                     val payload = decision.payload.copy(sessionDurationMillis = block.triggerSessionDurationMillis)
-                    val result = container.overlays.showBlocking(payload)
+                    val awaiting = container.habits.observeToday().first().firstOrNull {
+                        it.id in block.eligibleHabitIds && it.isActive &&
+                            it.progress.state == com.ansa1r.projectadhd.domain.habits.HabitState.AWAITING_CONFIRMATION
+                    }
+                    val result = container.overlays.showBlocking(payload, confirmation = awaiting)
                     if (result is OverlayResult.Failed) return fallback(payload, result.reason, now, settings, false)
                 } else container.overlays.hideProductionBlock()
             }

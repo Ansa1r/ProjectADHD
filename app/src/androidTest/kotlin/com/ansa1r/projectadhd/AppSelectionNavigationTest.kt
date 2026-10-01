@@ -96,21 +96,17 @@ class AppSelectionNavigationTest {
     }
     @Test fun profileActionsOpenRealScreensAndInternalNavigationDoesNotReplayStartup() {
         ready()
-        compose.onNodeWithContentDescription("Профиль").performClick()
-        for ((title, body) in listOf(
-            "Мой прогресс" to "Расширенная статистика прогресса появится в следующих версиях ProjectADHD.",
-            "Достижения" to "Система достижений появится в следующих версиях ProjectADHD."
-        )) {
-            compose.onNode(hasScrollAction()).performScrollToNode(hasText(title))
-            compose.onNodeWithText(title).performClick()
-            compose.onNodeWithText(body).assertIsDisplayed()
-            compose.onNodeWithTag("startup_cover").assertDoesNotExist()
-            compose.onNodeWithContentDescription("Назад").performClick()
-        }
+        compose.onNodeWithTag("home_profile").performClick()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Мой прогресс"))
+        compose.onNodeWithText("Мой прогресс").performClick()
+        compose.onNodeWithTag("startup_cover").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Назад").performClick()
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("Редактировать профиль"))
         compose.onNodeWithText("Редактировать профиль").performClick()
         compose.onNodeWithTag("nickname_input").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Главная").performClick()
+        compose.onNodeWithTag("change_avatar").assertExists()
+        compose.onNodeWithContentDescription("Назад").performClick()
+        compose.onNodeWithContentDescription("Назад").performClick()
         homeReached()
     }
 }

@@ -116,8 +116,8 @@ def verify_sql():
     connection.execute("INSERT INTO intervention_events VALUES (10, 'old.app', 'Old', 60000, 60000, 30, 2)")
     migrations = (SOURCE / "data/local/Migrations.kt").read_text()
     statements = re.findall(r'db\.execSQL\((?:"""(.*?)"""|"([^"\n]*)")\)', migrations, re.S)
-    assert len(statements) == 3
-    for triple, single in statements:
+    assert len(statements) == 13
+    for triple, single in statements[:3]:
         connection.execute(triple or single)
     assert connection.execute("SELECT title FROM habits WHERE id=10").fetchone() == ("Stage1 habit",)
     assert connection.execute("SELECT completedAt FROM habit_completions WHERE habitId=10").fetchone() == (20,)
@@ -131,6 +131,19 @@ def verify_sql():
             query = "PRAGMA " + pragma + "('" + table + "')"
             assert connection.execute(query).fetchall() == expected.execute(query).fetchall(), (table, pragma)
     expected.close()
+    connection.execute("INSERT INTO block_sessions VALUES ('migration.app', 'Kept', 30, '2026-09-30', 60000, 60000, 0, '10', 1, NULL, NULL)")
+    before = {table: connection.execute("SELECT * FROM " + table).fetchall() for table in ("habits", "habit_completions", "tracked_apps", "intervention_events", "block_sessions")}
+    for triple, single in statements[3:]:
+        connection.execute(triple or single)
+    for table, rows in before.items():
+        after = connection.execute("SELECT * FROM " + table).fetchall()
+        assert [row[:len(rows[0])] for row in after] == rows, table
+    assert connection.execute("SELECT targetDurationMinutes, type, linkedAppPackage, activatedAt FROM habits").fetchone() == (30, "MANUAL", None, 0)
+    assert connection.execute("SELECT totalXp, completedHabits, streak FROM mascot_progress").fetchone() == (0, 1, 0)
+    assert len(connection.execute("PRAGMA foreign_key_list(habit_daily_progress)").fetchall()) == 1
+    assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
+    connection.execute("DELETE FROM block_sessions")
+    print("PASS: actual MIGRATION_2_3 SQL preserves all five existing tables, duration/type defaults, no retroactive XP, FK integrity")
     connection.execute("DELETE FROM habits")
     connection.execute("DELETE FROM tracked_apps")
     connection.execute("DELETE FROM intervention_events")
@@ -145,7 +158,7 @@ def verify_sql():
             queries[path.stem + "." + method] = sql
     habit_dao = (SOURCE / "data/local/dao/HabitDao.kt").read_text()
     assert "@Insert(onConflict = OnConflictStrategy.IGNORE)" in habit_dao
-    connection.execute("INSERT INTO habits VALUES (1, 'Read', 100, 1)")
+    connection.execute("INSERT INTO habits (id, title, createdAt, isActive) VALUES (1, 'Read', 100, 1)")
     connection.execute("INSERT OR IGNORE INTO habit_completions VALUES (1, '2026-09-29', 200)")
     connection.execute("INSERT OR IGNORE INTO habit_completions VALUES (1, '2026-09-29', 300)")
     assert connection.execute("SELECT COUNT(*) FROM habit_completions").fetchone()[0] == 1
@@ -187,6 +200,27 @@ def verify_sql():
     connection.execute(queries["InterventionDao.clear"])
     assert connection.execute(count_query, {"from": 100, "until": 200}).fetchone()[0] == 0
     print("PASS: actual profile count query covers full history, exclusive date bounds and excludes duplicate BLOCK fallback/releases")
+    # The unique durable award key survives habit deletion; a failed ledger insert rolls back progress.
+    connection.execute("INSERT INTO habits (id, title, createdAt, isActive) VALUES (77, 'Atomic', 100, 1)")
+    connection.execute("INSERT INTO habit_daily_progress VALUES (77, '2026-10-01', 60000, 10, 'AWAITING_CONFIRMATION', NULL, 1, 60000, 100, 0)")
+    connection.execute("INSERT OR IGNORE INTO xp_awards VALUES ('habit:77:2026-10-01', 'HABIT', 77, '2026-10-01', 5, 5, 1, 100)")
+    connection.execute("INSERT OR IGNORE INTO xp_awards VALUES ('habit:77:2026-10-01', 'HABIT', 77, '2026-10-01', 5, 5, 1, 100)")
+    assert connection.execute("SELECT COUNT(*) FROM xp_awards").fetchone()[0] == 1
+    connection.commit()
+    connection.execute("CREATE TRIGGER fail_award BEFORE INSERT ON xp_awards BEGIN SELECT RAISE(ABORT, 'test'); END")
+    try:
+        with connection:
+            connection.execute("UPDATE habit_daily_progress SET state = 'COMPLETED' WHERE habitId = 77")
+            connection.execute("INSERT INTO xp_awards VALUES ('failure', 'STREAK', NULL, '2026-10-01', 10, 10, 1, 100)")
+        raise AssertionError("Expected transaction abort")
+    except sqlite3.IntegrityError:
+        pass
+    assert connection.execute("SELECT state FROM habit_daily_progress WHERE habitId = 77").fetchone() == ('AWAITING_CONFIRMATION',)
+    connection.execute("DROP TRIGGER fail_award")
+    connection.execute("DELETE FROM habits WHERE id = 77")
+    assert connection.execute("SELECT COUNT(*) FROM habit_daily_progress").fetchone()[0] == 0
+    assert connection.execute("SELECT COUNT(*) FROM xp_awards").fetchone()[0] == 1
+    print("PASS: XP event uniqueness, progress cascade, durable award retention and SQLite rollback")
     connection.close()
     print("PASS:", len(queries), "DAO queries prepared; uniqueness, local-day counts, disabled habits, cascade and event order checked on SQLite")
 

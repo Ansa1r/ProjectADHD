@@ -27,6 +27,8 @@ import com.ansa1r.projectadhd.R
 import com.ansa1r.projectadhd.ui.theme.BrandColors
 import kotlinx.coroutines.delay
 
+val LocalStartupVisible = staticCompositionLocalOf { false }
+
 /** One in-Activity sequence: 420 + 300 + 300 + 420 + 400 = 1840 ms. */
 @Composable
 fun StartupHost(entryId: Long, onVisibilityChanged: (Boolean) -> Unit = {}, content: @Composable () -> Unit) {
@@ -52,7 +54,7 @@ fun StartupHost(entryId: Long, onVisibilityChanged: (Boolean) -> Unit = {}, cont
     }
     Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().graphicsLayer { alpha = if (showing) 1f - coverAlpha.value else 1f }
-            .then(if (showing) Modifier.clearAndSetSemantics { } else Modifier)) { content() }
+            .then(if (showing) Modifier.clearAndSetSemantics { } else Modifier)) { CompositionLocalProvider(LocalStartupVisible provides showing) { content() } }
         if (showing) Box(Modifier.fillMaxSize().testTag("startup_cover").graphicsLayer { alpha = coverAlpha.value }
             .background(gradient).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {}),
             contentAlignment = Alignment.Center) {

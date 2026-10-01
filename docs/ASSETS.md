@@ -36,3 +36,8 @@ BLOCK использует исходный `mascot_blocking.png`. На нём �
 Иконки установленных приложений по-прежнему загружаются из PackageManager через `AppIconLoader` и `InstalledAppIcon`. Эти компоненты не изменены; Drawable/Bitmap в Room не сохраняются.
 
 Официальные основания: [adaptive icon и safe zone](https://developer.android.com/develop/ui/compose/system/icon_design_adaptive), [SplashScreen](https://developer.android.com/reference/androidx/core/splashscreen/SplashScreen), [миграция splash](https://developer.android.com/develop/ui/views/launch/splash-screen/migrate), [core-splashscreen 1.2.0](https://developer.android.com/jetpack/androidx/releases/core).
+
+
+## Stage 4
+
+Исходные 01–13 из нового архива находятся в `docs/assets/stage4`. Все изображения просмотрены перед работой. Runtime background/idle/blocking/praise/startup PNG сохранены побайтово. Новая векторная `ic_nav_mascot.xml` — навигационная пиктограмма. UserAvatar использует выбранную локальную фотографию или `ic_nav_profile`, не PNG Боба.

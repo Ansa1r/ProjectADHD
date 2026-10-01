@@ -1,13 +1,18 @@
 package com.ansa1r.projectadhd.domain.model
 
-import com.ansa1r.projectadhd.domain.settings.BlockingOpacity
+import com.ansa1r.projectadhd.domain.habits.*
 
 data class Habit(
     val id: Long,
     val title: String,
     val createdAt: Long,
     val isActive: Boolean,
-    val completedToday: Boolean
+    val completedToday: Boolean,
+    val targetDurationMinutes: Int = 30,
+    val type: HabitType = HabitType.MANUAL,
+    val linkedAppPackage: String? = null,
+    val progress: HabitProgress = HabitProgress(),
+    val legacyCompletion: Boolean = false
 )
 
 data class TrackedApp(
@@ -39,8 +44,7 @@ data class AppSettings(
     val lastInterventionAt: Long? = null,
     val lastMonitoringStartedAt: Long? = null,
     val praiseCooldownMinutes: Int = 30,
-    val lastPraiseAt: Long? = null,
-    val blockingOverlayOpacityPercent: Int = BlockingOpacity.DEFAULT_PERCENT
+    val lastPraiseAt: Long? = null
 )
 
 data class RecordCounts(val habits: Int = 0, val completions: Int = 0, val apps: Int = 0, val events: Int = 0)

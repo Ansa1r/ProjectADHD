@@ -16,11 +16,11 @@ class NavigationRevisionTest {
     @Test fun bottomNavigationHasFiveUnlabelledAccessibleIconsAndProfile() {
         ready()
         compose.onAllNodes(hasAnyAncestor(hasTestTag("bottom_navigation")) and hasClickAction()).assertCountEquals(5)
-        for (name in listOf("Главная", "Привычки", "Приложения", "Статистика", "Профиль")) {
+        for (name in listOf("Главная", "Привычки", "Приложения", "Статистика", "Маскот")) {
             compose.onNodeWithContentDescription(name).assertIsDisplayed()
             compose.onAllNodes(hasText(name) and hasAnyAncestor(hasTestTag("bottom_navigation"))).assertCountEquals(0)
         }
-        compose.onNodeWithContentDescription("Профиль").performClick()
+        compose.onNodeWithTag("home_profile").performClick()
         compose.onNodeWithTag("profile_nickname").assertIsDisplayed()
     }
     @Test fun settingsMenuOpensAllDestinationsAndDeveloperDebug() {
@@ -37,9 +37,9 @@ class NavigationRevisionTest {
             compose.onNodeWithText(body).assertIsDisplayed()
             compose.onNodeWithContentDescription("Назад").performClick()
         }
-        compose.onNodeWithText("Экран блокировки").performClick()
-        compose.onNodeWithTag("opacity_slider").assertIsDisplayed()
-        compose.onNodeWithTag("opacity_preview").assertExists()
+        compose.onNodeWithText("Интервалы уведомлений").performClick()
+        compose.onNodeWithTag("opacity_slider").assertDoesNotExist()
+        compose.onNodeWithTag("opacity_preview").assertDoesNotExist()
         compose.onNodeWithContentDescription("Назад").performClick()
         compose.onNodeWithText("Для разработчика").performScrollTo().performClick()
         compose.onNodeWithText("Отладка").performClick()

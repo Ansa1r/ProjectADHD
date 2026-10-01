@@ -21,7 +21,7 @@ fun StatsScreen(viewModel: StatsViewModel) {
     ScreenList {
         item { MessageBanner(viewModel) }
         item {
-            OutlinedButton(onClick = viewModel::refresh, enabled = !state.refreshing) { Text(stringResource(R.string.refresh)) }
+            BrandOutlinedButton(onClick = viewModel::refresh, enabled = !state.refreshing) { Text(stringResource(R.string.refresh)) }
             if (state.refreshing) LinearProgressIndicator(Modifier.fillMaxWidth())
         }
         item {

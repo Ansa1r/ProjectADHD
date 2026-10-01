@@ -11,18 +11,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ansa1r.projectadhd.R
-import com.ansa1r.projectadhd.domain.model.MascotMood
 import com.ansa1r.projectadhd.ui.components.*
-import com.ansa1r.projectadhd.ui.mascot.MascotView
 
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel, openProgress: () -> Unit, openAchievements: () -> Unit, editProfile: () -> Unit) {
+fun ProfileScreen(viewModel: ProfileViewModel, openProgress: () -> Unit, editProfile: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     ScreenList {
         item { MessageBanner(viewModel) }
         item {
             Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                MascotView(MascotMood.IDLE, Modifier.size(192.dp))
+                UserAvatar(state.avatar, Modifier.size(132.dp))
                 Text(state.nickname ?: stringResource(R.string.nickname_default), style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center, modifier = Modifier.testTag("profile_nickname"))
             }
@@ -38,9 +36,8 @@ fun ProfileScreen(viewModel: ProfileViewModel, openProgress: () -> Unit, openAch
                 }
             }
         }
-        item { MenuCard(stringResource(R.string.my_progress), stringResource(R.string.my_progress_hint), R.drawable.ic_nav_stats, openProgress) }
-        item { MenuCard(stringResource(R.string.achievements), stringResource(R.string.achievements_hint), R.drawable.ic_nav_habits, openAchievements) }
         item { MenuCard(stringResource(R.string.edit_profile), stringResource(R.string.edit_profile_hint), R.drawable.ic_nav_profile, editProfile) }
+        item { MenuCard(stringResource(R.string.my_progress), stringResource(R.string.my_progress_hint), R.drawable.ic_nav_stats, openProgress) }
     }
 }
 

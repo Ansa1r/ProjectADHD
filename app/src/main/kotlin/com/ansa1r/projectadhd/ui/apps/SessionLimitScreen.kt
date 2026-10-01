@@ -28,7 +28,7 @@ fun SessionLimitScreen(viewModel: AppsViewModel, saved: () -> Unit, returnToSele
             if (state.draft == null) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
             if (state.draft != null && rows.isEmpty()) item {
                 Text(stringResource(R.string.selection_missing))
-                OutlinedButton(onClick = returnToSelection) { Text(stringResource(R.string.choose_apps)) }
+                BrandOutlinedButton(onClick = returnToSelection) { Text(stringResource(R.string.choose_apps)) }
             }
             items(rows, key = { it.app.packageName }) { row ->
                 SectionCard {
@@ -42,7 +42,7 @@ fun SessionLimitScreen(viewModel: AppsViewModel, saved: () -> Unit, returnToSele
                         singleLine = true, isError = row.minutes == null, enabled = !state.saving,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         supportingText = { Text(stringResource(R.string.minutes_range)) },
-                        modifier = Modifier.fillMaxWidth().testTag("limit_" + row.app.packageName))
+                        modifier = Modifier.fillMaxWidth().testTag("limit_" + row.app.packageName), colors = brandFieldColors())
                 }
             }
             if (rows.isNotEmpty()) item {
@@ -52,8 +52,8 @@ fun SessionLimitScreen(viewModel: AppsViewModel, saved: () -> Unit, returnToSele
                         label = { Text(stringResource(R.string.common_limit)) }, singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         supportingText = { Text(stringResource(R.string.minutes_range)) },
-                        isError = !valid, enabled = !state.saving, modifier = Modifier.fillMaxWidth().testTag("common_limit"))
-                    OutlinedButton(viewModel::applyToAll, enabled = valid && !state.saving, modifier = Modifier.fillMaxWidth()) {
+                        isError = !valid, enabled = !state.saving, modifier = Modifier.fillMaxWidth().testTag("common_limit"), colors = brandFieldColors())
+                    BrandOutlinedButton(viewModel::applyToAll, enabled = valid && !state.saving, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.apply_to_all))
                     }
                 }

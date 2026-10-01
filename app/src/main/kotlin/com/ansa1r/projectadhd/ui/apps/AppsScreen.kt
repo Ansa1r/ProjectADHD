@@ -28,21 +28,25 @@ fun AppsScreen(viewModel: AppsViewModel, continueToLimits: () -> Unit, saved: ()
             item {
                 OutlinedTextField(value = state.query, onValueChange = viewModel::search,
                     label = { Text(stringResource(R.string.search_apps)) }, singleLine = true,
-                    modifier = Modifier.fillMaxWidth().testTag("app_search"))
+                    modifier = Modifier.fillMaxWidth().testTag("app_search"), colors = brandFieldColors())
             }
-            item { OutlinedButton(onClick = viewModel::refresh, enabled = !state.loading) { Text(stringResource(R.string.refresh_list)) } }
+            item { BrandOutlinedButton(onClick = viewModel::refresh, enabled = !state.loading) { Text(stringResource(R.string.refresh_list)) } }
             if (state.loading || state.draft == null) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
             if (!state.loading && state.rows.isEmpty()) item { Text(stringResource(R.string.apps_empty)) }
             items(state.rows, key = { it.installed.packageName }) { row ->
                 SectionCard {
                     Row(Modifier.fillMaxWidth().testTag("app_choice_" + row.installed.packageName)
                         .toggleable(value = row.selected, role = Role.Checkbox,
-                            enabled = state.draft != null && !state.saving && (row.available || row.selected),
+                            enabled = state.draft != null && !state.saving && ((row.available && !row.habitLinked) || row.selected),
                             onValueChange = { viewModel.select(row, it) }),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         InstalledAppIcon(row.installed.packageName, row.available, state.iconsRevision, viewModel.icons)
-                        Text(row.installed.displayName, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                        Checkbox(checked = row.selected, onCheckedChange = null)
+                        Column(Modifier.weight(1f)) {
+                            Text(row.installed.displayName, style = MaterialTheme.typography.titleMedium)
+                            if (row.habitLinked) Text("Используется в привычке")
+                            if (row.habitLinked && row.selected) Text("Конфликт: снимите ограничение. Блокировка отключена.")
+                        }
+                        Checkbox(checked = row.selected, onCheckedChange = null, enabled = !row.habitLinked || row.selected)
                     }
                 }
             }
@@ -56,7 +60,7 @@ fun AppsScreen(viewModel: AppsViewModel, continueToLimits: () -> Unit, saved: ()
                         onClick = { if (empty) viewModel.save() else continueToLimits() },
                         enabled = !state.saving && !state.saved, modifier = Modifier.fillMaxWidth().testTag("selection_action")) {
                         Text(stringResource(if (state.saving) R.string.saving else if (empty) R.string.save else R.string.continue_selection))
-                    } else OutlinedButton(onClick = continueToLimits, enabled = !state.saving,
+                    } else BrandOutlinedButton(onClick = continueToLimits, enabled = !state.saving,
                         modifier = Modifier.fillMaxWidth().testTag("edit_limits")) { Text(stringResource(R.string.configure_limits)) }
                 }
             }

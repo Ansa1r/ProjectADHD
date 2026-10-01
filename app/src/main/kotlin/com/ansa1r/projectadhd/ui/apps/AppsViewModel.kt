@@ -9,8 +9,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-data class AppRow(val installed: InstalledApp, val selected: Boolean, val available: Boolean)
+data class AppRow(val installed: InstalledApp, val selected: Boolean, val available: Boolean, val habitLinked: Boolean = false)
 data class AppsUiState(
+    val habitPackages: Set<String> = emptySet(),
     val installed: List<InstalledApp> = emptyList(),
     val draft: AppSelectionDraft? = null,
     val query: String = "",
@@ -27,7 +28,7 @@ data class AppsUiState(
         val all = (installed + savedApps.filter { it.packageName !in known }
             .map { InstalledApp(it.packageName, it.displayName) }).distinctBy { it.packageName }
         return all.filter { it.displayName.contains(query, true) }.sortedBy { it.displayName.lowercase() }
-            .map { AppRow(it, it.packageName in draft?.selected.orEmpty(), it.packageName in known) }
+            .map { AppRow(it, it.packageName in draft?.selected.orEmpty(), it.packageName in known, it.packageName in habitPackages) }
     }
 }
 
@@ -36,6 +37,7 @@ class AppsViewModel(private val container: AppContainer) : AppViewModel() {
     val state = mutable.asStateFlow()
     val icons = container.appIcons
     init {
+        execute { container.habits.linkedPackages.collect { packages -> mutable.update { it.copy(habitPackages = packages) } } }
         execute {
             container.trackedApps.observeAll().collect { apps ->
                 val current = apps.filterNot { app -> container.excludedApps.contains(app.packageName) }
@@ -58,7 +60,7 @@ class AppsViewModel(private val container: AppContainer) : AppViewModel() {
     }
     fun search(query: String) { mutable.update { it.copy(query = query) } }
     fun select(row: AppRow, checked: Boolean) {
-        if (mutable.value.saving || mutable.value.saved || (!row.available && checked) || container.excludedApps.contains(row.installed.packageName)) return
+        if (mutable.value.saving || mutable.value.saved || ((!row.available || !com.ansa1r.projectadhd.domain.habits.HabitAppConflict.canLimit(row.installed.packageName, mutable.value.habitPackages)) && checked) || container.excludedApps.contains(row.installed.packageName)) return
         mutable.update { it.copy(draft = it.draft?.select(row.installed, checked), edited = true) }
     }
     fun limitChanged(packageName: String, value: String) {

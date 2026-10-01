@@ -24,7 +24,7 @@ fun InstalledAppIcon(packageName: String, available: Boolean, revision: Int, loa
         value = null
         if (available) value = loader.load(packageName, sizePx, revision)?.asImageBitmap()
     }
-    Surface(Modifier.size(52.dp), shape = RoundedCornerShape(14.dp), color = BrandColors.PurpleDeep) {
+    Surface(Modifier.size(52.dp), shape = RoundedCornerShape(14.dp), color = BrandColors.PurpleDeep.copy(alpha = 0.85f), border = androidx.compose.foundation.BorderStroke(1.dp, BrandColors.PurpleOutline)) {
         bitmap?.let {
             Image(it, contentDescription = null, modifier = Modifier.padding(4.dp), contentScale = ContentScale.Fit)
         } ?: Icon(painterResource(R.drawable.ic_nav_apps), contentDescription = null,

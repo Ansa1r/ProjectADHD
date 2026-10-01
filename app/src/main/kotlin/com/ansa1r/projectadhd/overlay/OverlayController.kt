@@ -22,7 +22,7 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.ansa1r.projectadhd.BuildConfig
-import com.ansa1r.projectadhd.domain.settings.BlockingOpacity
+import com.ansa1r.projectadhd.domain.model.Habit
 import com.ansa1r.projectadhd.MainActivity
 import com.ansa1r.projectadhd.domain.intervention.InterventionPayload
 import com.ansa1r.projectadhd.domain.model.MascotMood
@@ -43,10 +43,9 @@ sealed interface OverlayResult {
 data class OverlaySnapshot(
     val visible: Boolean = false, val packageName: String? = null,
     val mood: MascotMood? = null, val test: Boolean = false,
-    val lastError: String? = null, val testArmedUntil: Long? = null,
-    val blockingOpacityPercent: Int = BlockingOpacity.DEFAULT_PERCENT
+    val lastError: String? = null, val testArmedUntil: Long? = null
 )
-private data class OverlayContent(val payload: InterventionPayload, val mood: MascotMood, val test: Boolean)
+private data class OverlayContent(val payload: InterventionPayload, val mood: MascotMood, val test: Boolean, val confirmation: Habit? = null)
 
 /** Main-thread owner of at most one non-focusable application overlay. No service or polling here. */
 class OverlayController(
@@ -60,17 +59,11 @@ class OverlayController(
     private var owner: OverlayOwner? = null
     private var manager: WindowManager? = null
     private var overlayContent by mutableStateOf<OverlayContent?>(null)
-    private var blockingOpacityPercent by mutableStateOf(BlockingOpacity.DEFAULT_PERCENT)
+    var confirmHabit: ((Long, Boolean) -> Unit)? = null
     private var foreground: String? = null
     private var appVisible = false
     private var armedMood: MascotMood? = null
     private val dismiss = Runnable { hide() }
-
-    fun setBlockingOpacity(percent: Int) {
-        check(Looper.myLooper() == Looper.getMainLooper())
-        blockingOpacityPercent = BlockingOpacity.normalize(percent)
-        mutable.update { it.copy(blockingOpacityPercent = blockingOpacityPercent) }
-    }
 
     fun appVisibility(visible: Boolean) {
         appVisible = visible
@@ -97,9 +90,10 @@ class OverlayController(
     }
     fun cancelTest() { armedMood = null; mutable.update { it.copy(testArmedUntil = null) } }
 
-    fun showBlocking(payload: InterventionPayload, test: Boolean = false): OverlayResult = show(payload, MascotMood.BLOCKING, test)
+    fun showBlocking(payload: InterventionPayload, test: Boolean = false, confirmation: Habit? = null): OverlayResult = show(payload, MascotMood.BLOCKING, test, confirmation)
     fun showPraise(payload: InterventionPayload, test: Boolean = false): OverlayResult = show(payload, MascotMood.PRAISE, test)
 
+    fun clearConfirmation() { overlayContent = overlayContent?.copy(confirmation = null) }
     fun hideProductionBlock() {
         if (state.value.mood == MascotMood.BLOCKING && !state.value.test) hide()
     }
@@ -117,7 +111,7 @@ class OverlayController(
     }
     fun recordError(reason: String) { mutable.update { it.copy(lastError = reason) } }
 
-    private fun show(payload: InterventionPayload, mood: MascotMood, test: Boolean): OverlayResult {
+    private fun show(payload: InterventionPayload, mood: MascotMood, test: Boolean, confirmation: Habit? = null): OverlayResult {
         check(Looper.myLooper() == Looper.getMainLooper())
         if (appVisible || foreground != payload.packageName || excluded.contains(payload.packageName)) {
             hide(); return OverlayResult.Suppressed
@@ -125,7 +119,7 @@ class OverlayController(
         if (Build.VERSION.SDK_INT < 26) return fail("API_BELOW_26")
         if (!permissions.canDrawOverlays()) return fail("OVERLAY_PERMISSION_MISSING")
         if (view != null && state.value.packageName == payload.packageName && state.value.mood == mood && state.value.test == test) {
-            overlayContent = OverlayContent(payload, mood, test)
+            overlayContent = OverlayContent(payload, mood, test, confirmation)
             return OverlayResult.Shown
         }
         hide()
@@ -147,13 +141,14 @@ class OverlayController(
                 setContent {
                     ProjectADHDTheme {
                         overlayContent?.let { data ->
-                            if (data.mood == MascotMood.BLOCKING) BlockingContent(data.payload, data.test, blockingOpacityPercent, ::openHabits)
+                            if (data.mood == MascotMood.BLOCKING) BlockingContent(data.payload, data.test, openHabits = ::openHabits,
+                                confirmation = data.confirmation, confirm = { id, yes -> confirmHabit?.invoke(id, yes) })
                             else PraiseContent(data.test)
                         }
                     }
                 }
             }
-            overlayContent = OverlayContent(payload, mood, test)
+            overlayContent = OverlayContent(payload, mood, test, confirmation)
             val blocking = mood == MascotMood.BLOCKING
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,

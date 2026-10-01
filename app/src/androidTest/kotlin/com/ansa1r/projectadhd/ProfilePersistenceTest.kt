@@ -18,13 +18,13 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ProfilePersistenceTest {
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
-    @Test fun nicknamePersistsAcrossStoreReopenWithoutChangingOpacity() = runBlocking {
+    @Test fun nicknamePersistsAcrossStoreReopenWithoutChangingCooldown() = runBlocking {
         val file = File(context.cacheDir, "nickname-${UUID.randomUUID()}.preferences_pb")
         val firstJob = SupervisorJob()
         try {
             val prefs = AppPreferences(PreferenceDataStoreFactory.create(scope = CoroutineScope(firstJob + Dispatchers.IO), produceFile = { file }))
             assertNull(prefs.nickname.first())
-            prefs.setBlockingOpacity(80)
+            prefs.setCooldown(80)
             prefs.setNickname("  Максим  ")
             assertEquals("Максим", prefs.nickname.first())
             prefs.setNickname("Максим 🌿")
@@ -33,7 +33,7 @@ class ProfilePersistenceTest {
         try {
             val prefs = AppPreferences(PreferenceDataStoreFactory.create(scope = CoroutineScope(secondJob + Dispatchers.IO), produceFile = { file }))
             assertEquals("Максим 🌿", prefs.nickname.first())
-            assertEquals(80, prefs.blockingOverlayOpacity.first())
+            assertEquals(80, prefs.settings.first().cooldownMinutes)
         } finally { secondJob.cancelAndJoin(); file.delete() }
     }
     @Test fun dailyCountUsesFullHistoryBoundariesAndDoesNotDoubleCountBlockFallback() = runBlocking {

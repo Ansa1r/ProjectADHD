@@ -1,5 +1,6 @@
 package com.ansa1r.projectadhd.ui.settings
 
+import com.ansa1r.projectadhd.ui.components.BrandOutlinedButton
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,7 +33,7 @@ fun SettingsScreen(
         item { SettingsMenuItem(R.string.privacy, R.drawable.ic_permission, openPrivacy) }
         if (BuildConfig.DEBUG) item { SettingsMenuItem(R.string.developer, R.drawable.ic_developer, openDeveloper) }
         item {
-            OutlinedButton(onClick = stopMonitoring, modifier = Modifier.fillMaxWidth()) {
+            BrandOutlinedButton(onClick = stopMonitoring, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.stop_monitoring))
             }
         }

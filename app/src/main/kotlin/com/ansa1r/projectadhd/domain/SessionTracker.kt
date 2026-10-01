@@ -32,7 +32,7 @@ class SessionTracker(private val activityTransitionGraceMillis: Long = 1_000) {
             }
             // Public UsageEvents has no instance ID. A late stop can belong to an older instance.
             UsageSignalType.STOPPED -> Unit
-            UsageSignalType.SCREEN_OFF, UsageSignalType.LOCKED, UsageSignalType.SHUTDOWN -> clearSession()
+            UsageSignalType.SCREEN_OFF, UsageSignalType.LOCKED, UsageSignalType.SHUTDOWN, UsageSignalType.STARTUP -> clearSession()
         }
     }
 

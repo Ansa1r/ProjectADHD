@@ -1,3 +1,5 @@
+> Историческая спецификация Stage1–3. Актуальное поведение: [TECH_SPEC_STAGE4.md](TECH_SPEC_STAGE4.md).
+
 # Техническая спецификация Stage 2
 
 Актуализировано для App Selection/Profile Fix, 2026-10-01. База: `Ansa1r/ProjectADHD`, commit `30b4c5bc73a9461f907eddd5eeed4968acceb573`. Текущие рабочие исходники находятся в `app/src/*/kotlin`; унаследованные шаблоны `src/*/java` сохраняются в копии, но исключены настройкой sourceSets. Все активные исходники используют `com.ansa1r.projectadhd`.

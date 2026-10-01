@@ -12,6 +12,11 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.withLock
 
 data class DebugUiState(
+    val mascot: com.ansa1r.projectadhd.data.local.entity.MascotEntity = com.ansa1r.projectadhd.data.local.entity.MascotEntity(),
+    val habitDetails: List<Habit> = emptyList(),
+    val awards: List<com.ansa1r.projectadhd.data.local.entity.XpAwardEntity> = emptyList(),
+    val habitRuntimeError: String? = null,
+    val conflicts: Set<String> = emptySet(),
     val permissions: PermissionState = PermissionState(),
     val monitoring: MonitoringSnapshot = MonitoringSnapshot(),
     val settings: AppSettings = AppSettings(),
@@ -28,6 +33,11 @@ class DebugViewModel(private val container: AppContainer) : AppViewModel() {
     val state = mutable.asStateFlow()
     init {
         check(BuildConfig.DEBUG)
+        execute { container.habits.mascot.observe().collect { mascot -> mutable.update { it.copy(mascot = mascot) } } }
+        execute { container.habits.mascot.history().collect { awards -> mutable.update { it.copy(awards = awards) } } }
+        execute { combine(container.habits.linkedPackages, container.trackedApps.observeAll()) { linked, apps ->
+            linked.intersect(apps.filter { it.enabled }.map { it.packageName }.toSet())
+        }.collect { conflicts -> mutable.update { it.copy(conflicts = conflicts) } } }
         execute { container.interventions.observeRecent().collect { events ->
             mutable.update { it.copy(lastEventAt = events.firstOrNull()?.occurredAt) }
         } }
@@ -41,7 +51,7 @@ class DebugViewModel(private val container: AppContainer) : AppViewModel() {
         execute { container.overlays.state.collect { overlay -> mutable.update { it.copy(overlay = overlay) } } }
         execute { container.habits.observeToday().collect { habits ->
             val active = habits.filter { it.isActive }
-            mutable.update { it.copy(tasks = DailyTaskSummary(active.size, active.count { it.completedToday })) }
+            mutable.update { it.copy(tasks = DailyTaskSummary(active.size, active.count { it.completedToday }), habitDetails = habits, habitRuntimeError = container.habitRuntime.lastError) }
         } }
         refresh()
     }

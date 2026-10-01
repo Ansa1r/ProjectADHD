@@ -23,7 +23,7 @@ class Stage2DatabaseTest {
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
 
-    @Test fun migrationPreservesStage1DataAndRoomValidatesVersion2() = runBlocking {
+    @Test fun migrationPreservesStage1DataAndRoomValidatesVersion3() = runBlocking {
         val name = "migration-" + UUID.randomUUID() + ".db"
         val path = context.getDatabasePath(name)
         path.parentFile?.mkdirs()
@@ -48,7 +48,7 @@ class Stage2DatabaseTest {
             old.execSQL("INSERT INTO intervention_events VALUES (9, 'video.app', 'Video', 900000, 900000, 300, 1)")
             old.version = 1
         }
-        val db = Room.databaseBuilder(context, AppDatabase::class.java, name).addMigrations(Migrations.MIGRATION_1_2).build()
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, name).addMigrations(Migrations.MIGRATION_1_2, Migrations.MIGRATION_2_3).build()
         try {
             assertEquals("Read", db.habits().observeDay("2026-09-30").first().single().habit.title)
             assertTrue(db.habits().observeDay("2026-09-30").first().single().completedToday)
@@ -58,7 +58,7 @@ class Stage2DatabaseTest {
             assertEquals("LEGACY_NOTIFICATION", event.type)
             assertEquals("", event.detail)
             assertTrue(db.blocks().active().isEmpty())
-            assertEquals(2, db.openHelper.readableDatabase.version)
+            assertEquals(3, db.openHelper.readableDatabase.version)
         } finally { db.close(); context.deleteDatabase(name) }
     }
 
@@ -86,8 +86,9 @@ class Stage2DatabaseTest {
             habits.setCompleted(oldId, false)
             habits.setCompleted(oldId, true)
             assertTrue(requireNotNull(blocks.find("video.app")).active)
+            db.progress().save(HabitDailyEntity(newId, date, accumulatedMillis = 1_800_000, state = "AWAITING_CONFIRMATION"))
             habits.setCompleted(newId, true)
-            // Even undo before a service poll must not restore a block already released by a real transition.
+            // Undo is no longer supported; repeated calls cannot restore the block or mint another reward.
             habits.setCompleted(newId, false)
             val released = requireNotNull(blocks.find("video.app"))
             assertFalse(released.active)

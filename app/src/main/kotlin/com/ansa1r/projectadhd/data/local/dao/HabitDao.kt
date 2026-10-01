@@ -15,6 +15,20 @@ data class DailyTaskRow(val id: Long, val completedAt: Long?)
 
 @Dao
 interface HabitDao {
+    @Query("SELECT * FROM habits WHERE id = :id")
+    suspend fun find(id: Long): HabitEntity?
+    @Query("SELECT * FROM habits WHERE isActive = 1")
+    suspend fun active(): List<HabitEntity>
+    @Query("SELECT linkedAppPackage FROM habits WHERE isActive = 1 AND type = 'APP_BASED' AND linkedAppPackage IS NOT NULL")
+    fun observeLinkedPackages(): Flow<List<String>>
+    @Query("SELECT COUNT(*) FROM habits WHERE isActive = 1 AND type = 'APP_BASED' AND linkedAppPackage = :pkg")
+    suspend fun linkedCount(pkg: String): Int
+    @Query("UPDATE habits SET activatedAt = :at WHERE id = :id")
+    suspend fun activateAt(id: Long, at: Long)
+
+    @Query("SELECT h.id, c.completedAt FROM habits h LEFT JOIN habit_completions c ON h.id = c.habitId AND c.localDate = :date WHERE h.isActive = 1 AND h.createdAt < :until AND h.activatedAt < :until")
+    suspend fun dailyTasksBefore(date: String, until: Long): List<DailyTaskRow>
+
     @Query("SELECT h.id, c.completedAt FROM habits h LEFT JOIN habit_completions c ON h.id = c.habitId AND c.localDate = :date WHERE h.isActive = 1")
     suspend fun dailyTasks(date: String): List<DailyTaskRow>
 

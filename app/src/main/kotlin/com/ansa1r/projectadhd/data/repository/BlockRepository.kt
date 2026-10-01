@@ -18,6 +18,7 @@ class BlockRepository(private val database: AppDatabase) {
         return DailyTaskSnapshot(date, database.habits().dailyTasks(date).map { DailyTask(it.id, it.completedAt) })
     }
     suspend fun start(payload: InterventionPayload, now: Long): BlockSession? = database.withTransaction {
+        if (database.habits().linkedCount(payload.packageName) > 0) return@withTransaction null
         dao.find(payload.packageName)?.domain()?.takeIf { it.active }?.let { return@withTransaction it }
         if (database.trackedApps().find(payload.packageName)?.enabled != true) return@withTransaction null
         // Re-read atomically so a simultaneous completion cannot create a stale block.
@@ -34,7 +35,7 @@ class BlockRepository(private val database: AppDatabase) {
         for (row in dao.active()) {
             val block = row.domain()
             val tracked = database.trackedApps().find(block.packageName)
-            val reason = if (tracked?.enabled != true || !isTrackable(block.packageName)) {
+            val reason = if (tracked?.enabled != true || !isTrackable(block.packageName) || database.habits().linkedCount(block.packageName) > 0) {
                 ReleaseReason.TRACKING_DISABLED
             } else BlockCoordinator.releaseReason(block, today, now)
             if (reason != null) release(block, now, reason, today.summary.incomplete)

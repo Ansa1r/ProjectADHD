@@ -13,7 +13,7 @@ class DailyUsageCalculator {
             if (event.timestamp > now) break
             val boundary = event.timestamp.coerceAtLeast(dayStart)
             val pkg = foreground
-            if (pkg != null && boundary > previousTime) {
+            if (pkg != null && boundary > previousTime && event.type != com.ansa1r.projectadhd.domain.model.UsageSignalType.STARTUP) {
                 totals[pkg] = (totals[pkg] ?: 0) + boundary - previousTime
             }
             tracker.accept(event)

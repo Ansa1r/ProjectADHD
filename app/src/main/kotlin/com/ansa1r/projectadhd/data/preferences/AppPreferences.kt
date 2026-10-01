@@ -3,7 +3,6 @@ package com.ansa1r.projectadhd.data.preferences
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import com.ansa1r.projectadhd.domain.settings.BlockingOpacity
 import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -18,6 +17,12 @@ private val Context.settingsDataStore by preferencesDataStore(name = "settings")
 
 class AppPreferences(private val store: DataStore<Preferences>) {
     constructor(context: Context) : this(context.applicationContext.settingsDataStore)
+    private val avatarKey = stringPreferencesKey("profile_avatar_file")
+    private val mascotNameKey = stringPreferencesKey("mascot_name")
+    val avatar = store.data.map { it[avatarKey] }.distinctUntilChanged()
+    val mascotName = store.data.map { Nickname.restore(it[mascotNameKey]) ?: "Боб" }.distinctUntilChanged()
+    suspend fun setAvatar(filename: String) { store.edit { it[avatarKey] = filename } }
+    suspend fun setMascotName(name: String) { store.edit { it[mascotNameKey] = Nickname.normalize(name) } }
     private val nicknameKey = stringPreferencesKey("profile_nickname")
     val nickname = store.data.map { Nickname.restore(it[nicknameKey]) }.distinctUntilChanged()
     suspend fun setNickname(value: String) {
@@ -25,7 +30,6 @@ class AppPreferences(private val store: DataStore<Preferences>) {
         store.edit { it[nicknameKey] = normalized }
     }
 
-    private val blockingOpacity = intPreferencesKey("blocking_overlay_opacity_percent")
     private val cooldown = intPreferencesKey("cooldown_minutes")
     private val lastIntervention = longPreferencesKey("last_intervention_at")
     private val praiseCooldown = intPreferencesKey("praise_cooldown_minutes")
@@ -38,15 +42,8 @@ class AppPreferences(private val store: DataStore<Preferences>) {
             lastInterventionAt = prefs[lastIntervention],
             lastMonitoringStartedAt = prefs[lastStarted],
             praiseCooldownMinutes = (prefs[praiseCooldown] ?: 30).coerceIn(1, 180),
-            lastPraiseAt = prefs[lastPraise],
-            blockingOverlayOpacityPercent = BlockingOpacity.normalize(prefs[blockingOpacity] ?: BlockingOpacity.DEFAULT_PERCENT)
+            lastPraiseAt = prefs[lastPraise]
         )
-    }
-
-    val blockingOverlayOpacity = settings.map { it.blockingOverlayOpacityPercent }.distinctUntilChanged()
-
-    suspend fun setBlockingOpacity(percent: Int) {
-        store.edit { it[blockingOpacity] = BlockingOpacity.normalize(percent) }
     }
 
     suspend fun setCooldown(minutes: Int) {

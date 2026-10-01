@@ -11,7 +11,10 @@ class TrackedAppRepository(private val database: AppDatabase, private val blocks
     private val dao get() = database.trackedApps()
     fun observeAll() = dao.observeAll().map { rows -> rows.map { it.model() } }
     suspend fun find(packageName: String) = dao.find(packageName)?.model()
-    suspend fun save(app: TrackedApp) = dao.save(app.entity())
+    suspend fun save(app: TrackedApp) = database.withTransaction {
+        require(!app.enabled || database.habits().linkedCount(app.packageName) == 0)
+        dao.save(app.entity())
+    }
     suspend fun delete(packageName: String) = database.withTransaction {
         dao.delete(packageName)
         blocks.reconcile(System.currentTimeMillis())
@@ -20,6 +23,7 @@ class TrackedAppRepository(private val database: AppDatabase, private val blocks
         require(apps.map { it.packageName }.toSet().size == apps.size)
         require(apps.all { it.enabled && it.packageName.isNotBlank() && it.packageName != BuildConfig.APPLICATION_ID })
         database.withTransaction {
+            require(apps.none { database.habits().linkedCount(it.packageName) > 0 })
             dao.deleteAll()
             dao.saveAll(apps.map { it.entity() })
             // Untracking and cancelling its challenge/history commit together.

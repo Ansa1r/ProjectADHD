@@ -1,5 +1,10 @@
 package com.ansa1r.projectadhd.navigation
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.Alignment
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ansa1r.projectadhd.ui.mascot.*
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
@@ -32,16 +37,24 @@ import com.ansa1r.projectadhd.ui.theme.BrandColors
 @Composable
 fun AppNavigation(container: AppContainer, habitsRequest: Int = 0) {
     val nav = rememberNavController()
+    val profileVm: ProfileViewModel = viewModel(factory = factory { ProfileViewModel(container) })
+    val profile by profileVm.state.collectAsStateWithLifecycle()
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: Screen.HOME.route
     val mainSection = Screen.entries.firstOrNull { it.route == route } ?: when {
         route == AppsRoutes.LIMITS -> Screen.APPS
-        route.startsWith("profile/") -> Screen.PROFILE
+        route.startsWith("habits/") -> Screen.HABITS
+        route.startsWith("mascot/") -> Screen.MASCOT
         else -> null
     }
     val settings = SettingsRoutes.isSettings(route)
     val title = when (route) {
         AppsRoutes.LIMITS -> R.string.session_limit_setup
+        ProfileRoutes.ROOT -> R.string.profile
+        HabitRoutes.CREATE -> R.string.add_habit
+        HabitRoutes.EDIT -> R.string.edit_habit
+        MascotRoutes.CUSTOMIZE -> R.string.mascot_customization
+        MascotRoutes.HISTORY -> R.string.mascot_history
         ProfileRoutes.EDIT -> R.string.edit_profile
         ProfileRoutes.PROGRESS -> R.string.my_progress
         ProfileRoutes.ACHIEVEMENTS -> R.string.achievements
@@ -66,8 +79,11 @@ fun AppNavigation(container: AppContainer, habitsRequest: Int = 0) {
     Scaffold(
         topBar = {
             TopAppBar(title = {
-                Text(stringResource(if (route == Screen.HOME.route) R.string.app_name else title),
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (route == Screen.HOME.route) Row(Modifier.clickable { open(ProfileRoutes.ROOT) }.testTag("home_profile"),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    UserAvatar(profile.avatar, Modifier.size(42.dp))
+                    Text(profile.nickname ?: stringResource(R.string.nickname_default), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                } else Text(stringResource(title), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }, navigationIcon = {
                 if (mainSection == null || route != mainSection.route) IconButton(onClick = { nav.popBackStack() }) {
                     Icon(painterResource(R.drawable.ic_back), contentDescription = stringResource(R.string.back))
@@ -87,7 +103,7 @@ fun AppNavigation(container: AppContainer, habitsRequest: Int = 0) {
                         onClick = { openMain(screen) },
                         icon = { Icon(painterResource(screen.icon), contentDescription = stringResource(screen.title)) },
                         label = null, alwaysShowLabel = false,
-                        colors = NavigationBarItemDefaults.colors(indicatorColor = BrandColors.PurpleSurface,
+                        colors = NavigationBarItemDefaults.colors(indicatorColor = BrandColors.PurpleSurface.copy(alpha = 0.85f),
                             selectedIconColor = BrandColors.Text, unselectedIconColor = BrandColors.Muted))
                 }
             }
@@ -101,7 +117,18 @@ fun AppNavigation(container: AppContainer, habitsRequest: Int = 0) {
                             openHabits = { openMain(Screen.HABITS) }, openApps = { openMain(Screen.APPS) },
                             openStats = { openMain(Screen.STATS) }, openPermissions = { open(SettingsRoutes.PERMISSIONS) })
                     }
-                    composable(Screen.HABITS.route) { HabitsScreen(viewModel(factory = factory { HabitsViewModel(container) })) }
+                    composable(Screen.HABITS.route) { HabitsScreen(viewModel(factory = factory { HabitsViewModel(container) }),
+                        create = { open(HabitRoutes.CREATE) }, edit = { open("habits/edit/$it") }) }
+                    composable(HabitRoutes.CREATE) { screenEntry -> CreateHabitScreen(viewModel(factory = factory { CreateHabitViewModel(container) }), saved = {
+                        if (nav.currentBackStackEntry?.id == screenEntry.id) nav.popBackStack()
+                    }) }
+                    composable(HabitRoutes.EDIT) { screenEntry -> CreateHabitScreen(viewModel(factory = factory {
+                        CreateHabitViewModel(container, screenEntry.arguments?.getString("id")?.toLongOrNull())
+                    }), saved = { if (nav.currentBackStackEntry?.id == screenEntry.id) nav.popBackStack() }) }
+                    composable(Screen.MASCOT.route) { MascotScreen(viewModel(factory = factory { MascotViewModel(container) }),
+                        customize = { open(MascotRoutes.CUSTOMIZE) }, history = { open(MascotRoutes.HISTORY) }) }
+                    composable(MascotRoutes.CUSTOMIZE) { ProfilePlaceholderScreen(R.string.mascot_customization, R.string.mascot_customization_hint) }
+                    composable(MascotRoutes.HISTORY) { MascotHistoryScreen(viewModel(factory = factory { MascotViewModel(container) })) }
                     navigation(startDestination = AppsRoutes.SELECTION, route = AppsRoutes.ROOT) {
                         composable(AppsRoutes.SELECTION) { screenEntry ->
                             val owner = remember(screenEntry) { nav.getBackStackEntry(AppsRoutes.ROOT) }
@@ -119,9 +146,9 @@ fun AppNavigation(container: AppContainer, habitsRequest: Int = 0) {
                         }
                     }
                     composable(Screen.STATS.route) { StatsScreen(viewModel(factory = factory { StatsViewModel(container) })) }
-                    composable(Screen.PROFILE.route) {
-                        ProfileScreen(viewModel(factory = factory { ProfileViewModel(container) }),
-                            openProgress = { open(ProfileRoutes.PROGRESS) }, openAchievements = { open(ProfileRoutes.ACHIEVEMENTS) },
+                    composable(ProfileRoutes.ROOT) {
+                        ProfileScreen(profileVm,
+                            openProgress = { open(ProfileRoutes.PROGRESS) },
                             editProfile = { open(ProfileRoutes.EDIT) })
                     }
                     composable(ProfileRoutes.EDIT) { screenEntry ->
@@ -129,7 +156,7 @@ fun AppNavigation(container: AppContainer, habitsRequest: Int = 0) {
                             if (nav.currentBackStackEntry?.id == screenEntry.id) nav.popBackStack()
                         })
                     }
-                    composable(ProfileRoutes.PROGRESS) { ProfilePlaceholderScreen(R.string.my_progress, R.string.progress_placeholder) }
+                    composable(ProfileRoutes.PROGRESS) { StatsScreen(viewModel(factory = factory { StatsViewModel(container) })) }
                     composable(ProfileRoutes.ACHIEVEMENTS) { ProfilePlaceholderScreen(R.string.achievements, R.string.achievements_placeholder) }
                     composable(SettingsRoutes.ROOT) {
                         SettingsScreen(openPermissions = { open(SettingsRoutes.PERMISSIONS) },
@@ -139,8 +166,7 @@ fun AppNavigation(container: AppContainer, habitsRequest: Int = 0) {
                     }
                     composable(SettingsRoutes.PERMISSIONS) { PermissionsScreen(viewModel(factory = factory { PermissionsViewModel(container) })) }
                     composable(SettingsRoutes.BLOCKING) {
-                        BlockingSettingsScreen(viewModel(factory = factory { BlockingSettingsViewModel(container) }),
-                            viewModel(factory = factory { SettingsViewModel(container) }))
+                        BlockingSettingsScreen(viewModel(factory = factory { SettingsViewModel(container) }))
                     }
                     composable(SettingsRoutes.THEME) { SettingsPlaceholderScreen(R.string.interface_theme, R.string.theme_placeholder) }
                     composable(SettingsRoutes.PRIVACY) { SettingsPlaceholderScreen(R.string.privacy, R.string.privacy_placeholder, showPrivacyInfo = true) }
@@ -152,4 +178,5 @@ fun AppNavigation(container: AppContainer, habitsRequest: Int = 0) {
             }
         }
     }
+    PendingHabitConfirmation(container, inlineOnHabits = route == Screen.HABITS.route)
 }

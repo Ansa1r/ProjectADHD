@@ -49,7 +49,7 @@ fun PermissionsScreen(viewModel: PermissionsViewModel) {
                 Text(stringResource(R.string.channels_status), style = MaterialTheme.typography.titleMedium)
                 Text(permissionText(state.monitoringChannel && state.interventionChannel))
                 Text(stringResource(R.string.channels_explanation))
-                OutlinedButton(onClick = viewModel::notificationSettings) { Text(stringResource(R.string.notification_settings)) }
+                BrandOutlinedButton(onClick = viewModel::notificationSettings) { Text(stringResource(R.string.notification_settings)) }
             }
         }
     }

@@ -31,8 +31,6 @@ fun HomeScreen(
         item {
             Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 MascotView(MascotMood.IDLE, Modifier.size(192.dp))
-                Text(stringResource(R.string.home_greeting), style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onBackground, textAlign = TextAlign.Center)
             }
         }
         item {
@@ -68,7 +66,7 @@ fun HomeScreen(
                     BrandButton(onClick = viewModel::start, enabled = state.permissions.canMonitor && !state.loading,
                         modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.start_monitoring)) }
                     if (!state.permissions.canMonitor) Text(stringResource(R.string.home_start_permission_hint))
-                } else OutlinedButton(onClick = viewModel::stop, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.stop_monitoring)) }
+                } else BrandOutlinedButton(onClick = viewModel::stop, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.stop_monitoring)) }
             }
         }
         if (!state.permissions.canMonitor || !state.permissions.overlay) item {

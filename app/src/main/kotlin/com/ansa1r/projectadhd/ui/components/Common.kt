@@ -45,10 +45,10 @@ fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
     val calm = LocalCalmSurfaces.current
     Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (calm) BrandColors.Surface else BrandColors.PurpleSurface,
+            containerColor = if (calm) BrandColors.Surface else BrandColors.PurpleSurface.copy(alpha = 0.85f),
             contentColor = BrandColors.Text),
         border = BorderStroke(if (calm) 1.dp else 2.dp, BrandColors.PurpleOutline),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (calm) 0.dp else 3.dp)) {
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
     }
 }

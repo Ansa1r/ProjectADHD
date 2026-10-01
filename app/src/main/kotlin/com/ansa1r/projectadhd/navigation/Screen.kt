@@ -7,7 +7,7 @@ enum class Screen(val route: String, val title: Int, val icon: Int) {
     HABITS("habits", R.string.habits, R.drawable.ic_nav_habits),
     APPS("apps", R.string.apps, R.drawable.ic_nav_apps),
     STATS("stats", R.string.stats, R.drawable.ic_nav_stats),
-    PROFILE("profile", R.string.profile, R.drawable.ic_nav_profile)
+    MASCOT("mascot", R.string.mascot, R.drawable.ic_nav_mascot)
 }
 
 object SettingsRoutes {
@@ -27,7 +27,17 @@ object AppsRoutes {
     const val LIMITS = "apps/limits"
 }
 object ProfileRoutes {
+    const val ROOT = "profile"
     const val EDIT = "profile/edit"
     const val PROGRESS = "profile/progress"
     const val ACHIEVEMENTS = "profile/achievements"
+}
+
+object HabitRoutes {
+    const val CREATE = "habits/create"
+    const val EDIT = "habits/edit/{id}"
+}
+object MascotRoutes {
+    const val CUSTOMIZE = "mascot/customize"
+    const val HISTORY = "mascot/history"
 }

@@ -170,7 +170,7 @@
     <string name="home_stats_body">Время в приложениях и история пауз</string>
     <string name="profile">Профиль</string>
     <string name="profile_placeholder">Функции профиля появятся в следующих версиях ProjectADHD.</string>
-    <string name="blocking_settings">Экран блокировки</string>
+    <string name="blocking_settings">Интервалы уведомлений</string>
     <string name="interface_theme">Тема интерфейса</string>
     <string name="theme_placeholder">Настройки темы появятся в следующих версиях ProjectADHD.</string>
     <string name="privacy">Конфиденциальность</string>
@@ -218,4 +218,10 @@
     <string name="achievements_placeholder">Система достижений появится в следующих версиях ProjectADHD.</string>
     <string name="edit_profile">Редактировать профиль</string>
     <string name="edit_profile_hint">Изменить локальный никнейм</string>
+    <string name="mascot">Маскот</string>
+    <string name="mascot_customization">Кастомизация</string>
+    <string name="mascot_customization_hint">Функция появится в следующих версиях ProjectADHD.</string>
+    <string name="mascot_history">История развития</string>
+    <string name="avatar_error">Не удалось сохранить изображение. Выберите другое фото размером до 20 МБ.</string>
+    <string name="habit_app_missing">Приложение недоступно. Проверьте, установлено ли оно.</string>
 </resources>
