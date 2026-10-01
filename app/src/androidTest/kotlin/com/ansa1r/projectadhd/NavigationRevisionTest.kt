@@ -21,7 +21,7 @@ class NavigationRevisionTest {
             compose.onAllNodes(hasText(name) and hasAnyAncestor(hasTestTag("bottom_navigation"))).assertCountEquals(0)
         }
         compose.onNodeWithContentDescription("Профиль").performClick()
-        compose.onNodeWithText("Функции профиля появятся в следующих версиях ProjectADHD.").assertIsDisplayed()
+        compose.onNodeWithTag("profile_nickname").assertIsDisplayed()
     }
     @Test fun settingsMenuOpensAllDestinationsAndDeveloperDebug() {
         ready()

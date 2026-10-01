@@ -5,8 +5,14 @@ import com.ansa1r.projectadhd.data.local.entity.InterventionEventEntity
 import com.ansa1r.projectadhd.domain.model.InterventionEvent
 import com.ansa1r.projectadhd.domain.model.InterventionType
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import com.ansa1r.projectadhd.util.currentDayBoundsFlow
 
 class InterventionRepository(private val dao: InterventionDao) {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeTodayCount() = currentDayBoundsFlow().flatMapLatest { dao.observeInterventionCount(it.start, it.end) }
+
     fun observeRecent() = dao.observeRecent().map { rows ->
         rows.map { with(it) { InterventionEvent(id, packageName, appName, sessionDurationMillis, limitMillis, occurredAt, incompleteHabitCount, InterventionType.valueOf(type), detail) } }
     }

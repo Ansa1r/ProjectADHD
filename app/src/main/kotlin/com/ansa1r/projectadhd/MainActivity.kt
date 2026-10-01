@@ -21,22 +21,21 @@ class MainActivity : ComponentActivity() {
         fun habitsIntent(context: Context) = Intent(context, MainActivity::class.java)
             .setAction(OPEN_HABITS).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
     }
+    private var startupEntry by mutableStateOf(0L)
     private var habitsRequest by mutableStateOf(0)
     private val container get() = (application as ProjectADHDApplication).container
     override fun onCreate(savedInstanceState: Bundle?) {
         val systemSplash = installSplashScreen()
         super.onCreate(savedInstanceState)
-        val startup = !container.startupShown && savedInstanceState == null && intent.action == Intent.ACTION_MAIN
-        container.startupShown = true
         systemSplash.setOnExitAnimationListener { provider ->
             // No artificial system-splash hold; reveal the matching Compose scene.
-            provider.view.animate().alpha(0f).setDuration(if (startup) 120L else 0L)
+            provider.view.animate().alpha(0f).setDuration(80L)
                 .withEndAction { provider.remove() }.start()
         }
-        updateSystemBars(startup)
+        updateSystemBars(true)
         if (savedInstanceState == null && intent.action == OPEN_HABITS) habitsRequest++
         setContent { ProjectADHDTheme {
-            StartupHost(startup, habitsRequest, ::updateSystemBars) { AppNavigation(container, habitsRequest) }
+            StartupHost(startupEntry, ::updateSystemBars) { AppNavigation(container, habitsRequest) }
         } }
     }
     private fun updateSystemBars(startup: Boolean) {
@@ -52,8 +51,11 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         container.overlays.appVisibility(true)
+        container.uiEntries.onStart()?.let { startupEntry = it }
     }
     override fun onStop() {
+        startupEntry = 0L
+        container.uiEntries.onStop(isChangingConfigurations)
         container.overlays.appVisibility(false)
         super.onStop()
     }

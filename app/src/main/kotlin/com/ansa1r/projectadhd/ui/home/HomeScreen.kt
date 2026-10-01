@@ -45,8 +45,8 @@ fun HomeScreen(
                 BrandButton(onClick = openHabits, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.go_to_tasks)) }
             }
         }
-        item {
-            MenuCard(stringResource(R.string.home_apps_title), stringResource(R.string.home_apps_body),
+        if (state.showAppSelection) item {
+            MenuCard(stringResource(R.string.choose_apps), stringResource(R.string.home_apps_body),
                 R.drawable.ic_nav_apps, openApps)
         }
         item {

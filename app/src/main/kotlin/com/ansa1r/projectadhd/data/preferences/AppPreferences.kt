@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.Preferences
 import com.ansa1r.projectadhd.domain.settings.BlockingOpacity
 import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.ansa1r.projectadhd.domain.profile.Nickname
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -16,6 +18,13 @@ private val Context.settingsDataStore by preferencesDataStore(name = "settings")
 
 class AppPreferences(private val store: DataStore<Preferences>) {
     constructor(context: Context) : this(context.applicationContext.settingsDataStore)
+    private val nicknameKey = stringPreferencesKey("profile_nickname")
+    val nickname = store.data.map { Nickname.restore(it[nicknameKey]) }.distinctUntilChanged()
+    suspend fun setNickname(value: String) {
+        val normalized = Nickname.normalize(value)
+        store.edit { it[nicknameKey] = normalized }
+    }
+
     private val blockingOpacity = intPreferencesKey("blocking_overlay_opacity_percent")
     private val cooldown = intPreferencesKey("cooldown_minutes")
     private val lastIntervention = longPreferencesKey("last_intervention_at")

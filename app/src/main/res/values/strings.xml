@@ -48,7 +48,7 @@
     <string name="delete_habit_title">Удалить привычку?</string>
     <string name="delete_habit_body">Привычка и все отметки её выполнения будут удалены.</string>
     <string name="apps_intro">Отметьте приложения для мониторинга. Лимит относится к одной непрерывной сессии; по умолчанию — 15 минут.</string>
-    <string name="search_apps">Поиск по названию или пакету</string>
+    <string name="search_apps">Поиск приложений</string>
     <string name="apps_empty">Приложения не найдены. Измените поиск или обновите список.</string>
     <string name="tracking_enabled">Отслеживается</string>
     <string name="tracking_disabled">Не отслеживается</string>
@@ -193,5 +193,29 @@
     <string name="opacity_saved">Сохранено. Перезапуск не нужен.</string>
     <string name="opacity_save_error">Не удалось сохранить прозрачность. Проверь свободное место и попробуй снова.</string>
     <string name="startup_mascot_description">Счастливый маскот ProjectADHD</string>
+    <string name="choose_apps">Выбрать приложения</string>
+    <string name="continue_selection">Продолжить</string>
+    <string name="configure_limits">Настроить лимиты</string>
+    <string name="session_limit_setup">Настройка лимита</string>
+    <string name="limit_for_app">Лимит для %1$s, минут</string>
+    <string name="common_limit">Общий лимит, минут</string>
+    <string name="apply_to_all">Применить ко всем</string>
+    <string name="selection_missing">Сначала выберите приложения.</string>
+    <string name="apps_save_error">Не удалось сохранить приложения. Изменения не применены. Повторите попытку.</string>
+    <string name="saving">Сохраняется…</string>
+    <string name="nickname_default">Пользователь</string>
+    <string name="nickname">Никнейм</string>
+    <string name="nickname_hint">От 1 до 32 символов, без переноса строки.</string>
+    <string name="nickname_save_error">Не удалось сохранить никнейм. Повторите попытку.</string>
+    <string name="profile_today">Сегодня</string>
+    <string name="profile_tracked_count">Отслеживается приложений: %1$d</string>
+    <string name="profile_interventions">Вмешательств сегодня: %1$d</string>
+    <string name="my_progress">Мой прогресс</string>
+    <string name="my_progress_hint">Выполненные задачи и личные результаты</string>
+    <string name="progress_placeholder">Расширенная статистика прогресса появится в следующих версиях ProjectADHD.</string>
+    <string name="achievements">Достижения</string>
+    <string name="achievements_hint">Будущие награды за полезные привычки</string>
+    <string name="achievements_placeholder">Система достижений появится в следующих версиях ProjectADHD.</string>
+    <string name="edit_profile">Редактировать профиль</string>
+    <string name="edit_profile_hint">Изменить локальный никнейм</string>
 </resources>
-

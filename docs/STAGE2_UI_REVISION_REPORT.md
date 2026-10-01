@@ -1,5 +1,7 @@
 # Stage 2 UI/UX Revision — отчёт
 
+> Исторический документ UI Revision. Актуальные правила Apps, Profile и показа startup при каждом возврате из фона описаны в STAGE2_APP_SELECTION_PROFILE_REPORT.md и STAGE2_APP_SELECTION_PROFILE_TEST.md.
+
 Дата: 2026-10-01 UTC. Версия: **0.2.2-pre-alpha**, code **4**. Package/namespace остаётся **com.ansa1r.projectadhd**.
 
 ## Исходная база и границы работы

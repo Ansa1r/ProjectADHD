@@ -27,17 +27,19 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
+import com.ansa1r.projectadhd.domain.model.TrackedApp
 
 class AppContainer(context: Context) {
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    var startupShown = false
+    val uiEntries = com.ansa1r.projectadhd.domain.startup.ForegroundEntryTracker()
     private val appContext = context.applicationContext
     private val database by lazy {
         Room.databaseBuilder(appContext, AppDatabase::class.java, "projectadhd.db").addMigrations(Migrations.MIGRATION_1_2).build()
     }
     val blocks by lazy { BlockRepository(database) }
     val habits by lazy { HabitRepository(database, blocks) }
-    val trackedApps by lazy { TrackedAppRepository(database.trackedApps()) }
+    val trackedApps by lazy { TrackedAppRepository(database, blocks) }
     val interventions by lazy { InterventionRepository(database.interventions()) }
     val preferences = AppPreferences(appContext)
     val permissions = PermissionManager(appContext)
@@ -57,6 +59,14 @@ class AppContainer(context: Context) {
     val controller by lazy { MonitoringController(appContext, permissions, monitoring, overlays, blocks) }
     val notifications = NotificationHelper(appContext)
     val engine = InterventionEngine()
+    suspend fun saveTrackedSelection(apps: List<TrackedApp>) = controller.gate.withLock {
+        require(apps.none { excludedApps.contains(it.packageName) })
+        trackedApps.replaceSelection(apps)
+        val packages = apps.map { it.packageName }.toSet()
+        if (overlays.state.value.packageName?.let { it !in packages } == true) overlays.hide()
+        if (packages.isEmpty()) overlays.cancelTest()
+        monitoring.selectionSaved(apps)
+    }
     fun recordCounts() = combine(
         database.habits().observeHabitCount(), database.habits().observeCompletionCount(),
         database.trackedApps().observeCount(), database.interventions().observeCount()

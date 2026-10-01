@@ -23,7 +23,7 @@ import com.ansa1r.projectadhd.ui.debug.*
 import com.ansa1r.projectadhd.ui.habits.*
 import com.ansa1r.projectadhd.ui.home.*
 import com.ansa1r.projectadhd.ui.mascot.MascotBackdrop
-import com.ansa1r.projectadhd.ui.profile.ProfileScreen
+import com.ansa1r.projectadhd.ui.profile.*
 import com.ansa1r.projectadhd.ui.settings.*
 import com.ansa1r.projectadhd.ui.stats.*
 import com.ansa1r.projectadhd.ui.theme.BrandColors
@@ -32,34 +32,44 @@ import com.ansa1r.projectadhd.ui.theme.BrandColors
 @Composable
 fun AppNavigation(container: AppContainer, habitsRequest: Int = 0) {
     val nav = rememberNavController()
-    LaunchedEffect(habitsRequest) {
-        if (habitsRequest > 0) nav.navigate(Screen.HABITS.route) {
-            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-            launchSingleTop = true
-            restoreState = true
-        }
-    }
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: Screen.HOME.route
-    val mainScreen = Screen.entries.firstOrNull { it.route == route }
+    val mainSection = Screen.entries.firstOrNull { it.route == route } ?: when {
+        route == AppsRoutes.LIMITS -> Screen.APPS
+        route.startsWith("profile/") -> Screen.PROFILE
+        else -> null
+    }
     val settings = SettingsRoutes.isSettings(route)
-    val title = mainScreen?.title ?: when (route) {
+    val title = when (route) {
+        AppsRoutes.LIMITS -> R.string.session_limit_setup
+        ProfileRoutes.EDIT -> R.string.edit_profile
+        ProfileRoutes.PROGRESS -> R.string.my_progress
+        ProfileRoutes.ACHIEVEMENTS -> R.string.achievements
         SettingsRoutes.ROOT -> R.string.settings
         SettingsRoutes.PERMISSIONS -> R.string.permissions_title
         SettingsRoutes.BLOCKING -> R.string.blocking_settings
         SettingsRoutes.THEME -> R.string.interface_theme
         SettingsRoutes.PRIVACY -> R.string.privacy
         SettingsRoutes.DEVELOPER -> R.string.developer
-        else -> R.string.debug
+        else -> mainSection?.title ?: R.string.debug
     }
     fun open(destination: String) { nav.navigate(destination) { launchSingleTop = true } }
+    fun openMain(screen: Screen) {
+        if (nav.currentDestination?.route == screen.route) return
+        nav.navigate(if (screen == Screen.APPS) AppsRoutes.ROOT else screen.route) {
+            popUpTo(nav.graph.findStartDestination().id) { saveState = false }
+            launchSingleTop = true
+            restoreState = false
+        }
+    }
+    LaunchedEffect(habitsRequest) { if (habitsRequest > 0) openMain(Screen.HABITS) }
     Scaffold(
         topBar = {
             TopAppBar(title = {
                 Text(stringResource(if (route == Screen.HOME.route) R.string.app_name else title),
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
             }, navigationIcon = {
-                if (mainScreen == null) IconButton(onClick = { nav.popBackStack() }) {
+                if (mainSection == null || route != mainSection.route) IconButton(onClick = { nav.popBackStack() }) {
                     Icon(painterResource(R.drawable.ic_back), contentDescription = stringResource(R.string.back))
                 }
             }, actions = {
@@ -69,16 +79,12 @@ fun AppNavigation(container: AppContainer, habitsRequest: Int = 0) {
             }, colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandColors.Background))
         },
         bottomBar = {
-            if (mainScreen != null) NavigationBar(modifier = Modifier.testTag("bottom_navigation"),
+            if (mainSection != null) NavigationBar(modifier = Modifier.testTag("bottom_navigation"),
                 containerColor = BrandColors.Background, tonalElevation = 0.dp) {
                 Screen.entries.forEach { screen ->
-                    NavigationBarItem(selected = route == screen.route,
+                    NavigationBarItem(selected = mainSection == screen,
                         modifier = Modifier.testTag("bottom_item_" + screen.route),
-                        onClick = { nav.navigate(screen.route) {
-                            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        } },
+                        onClick = { openMain(screen) },
                         icon = { Icon(painterResource(screen.icon), contentDescription = stringResource(screen.title)) },
                         label = null, alwaysShowLabel = false,
                         colors = NavigationBarItemDefaults.colors(indicatorColor = BrandColors.PurpleSurface,
@@ -92,13 +98,39 @@ fun AppNavigation(container: AppContainer, habitsRequest: Int = 0) {
                 NavHost(navController = nav, startDestination = Screen.HOME.route) {
                     composable(Screen.HOME.route) {
                         HomeScreen(viewModel(factory = factory { HomeViewModel(container) }),
-                            openHabits = { open(Screen.HABITS.route) }, openApps = { open(Screen.APPS.route) },
-                            openStats = { open(Screen.STATS.route) }, openPermissions = { open(SettingsRoutes.PERMISSIONS) })
+                            openHabits = { openMain(Screen.HABITS) }, openApps = { openMain(Screen.APPS) },
+                            openStats = { openMain(Screen.STATS) }, openPermissions = { open(SettingsRoutes.PERMISSIONS) })
                     }
                     composable(Screen.HABITS.route) { HabitsScreen(viewModel(factory = factory { HabitsViewModel(container) })) }
-                    composable(Screen.APPS.route) { AppsScreen(viewModel(factory = factory { AppsViewModel(container) })) }
+                    navigation(startDestination = AppsRoutes.SELECTION, route = AppsRoutes.ROOT) {
+                        composable(AppsRoutes.SELECTION) { screenEntry ->
+                            val owner = remember(screenEntry) { nav.getBackStackEntry(AppsRoutes.ROOT) }
+                            val vm: AppsViewModel = viewModel(viewModelStoreOwner = owner, factory = factory { AppsViewModel(container) })
+                            AppsScreen(vm, continueToLimits = { open(AppsRoutes.LIMITS) }, saved = {
+                                if (nav.currentBackStackEntry?.id == screenEntry.id) openMain(Screen.HOME)
+                            })
+                        }
+                        composable(AppsRoutes.LIMITS) { screenEntry ->
+                            val owner = remember(screenEntry) { nav.getBackStackEntry(AppsRoutes.ROOT) }
+                            val vm: AppsViewModel = viewModel(viewModelStoreOwner = owner, factory = factory { AppsViewModel(container) })
+                            SessionLimitScreen(vm, saved = {
+                                if (nav.currentBackStackEntry?.id == screenEntry.id) openMain(Screen.HOME)
+                            }, returnToSelection = { nav.popBackStack() })
+                        }
+                    }
                     composable(Screen.STATS.route) { StatsScreen(viewModel(factory = factory { StatsViewModel(container) })) }
-                    composable(Screen.PROFILE.route) { ProfileScreen() }
+                    composable(Screen.PROFILE.route) {
+                        ProfileScreen(viewModel(factory = factory { ProfileViewModel(container) }),
+                            openProgress = { open(ProfileRoutes.PROGRESS) }, openAchievements = { open(ProfileRoutes.ACHIEVEMENTS) },
+                            editProfile = { open(ProfileRoutes.EDIT) })
+                    }
+                    composable(ProfileRoutes.EDIT) { screenEntry ->
+                        EditProfileScreen(viewModel(factory = factory { EditProfileViewModel(container) }), saved = {
+                            if (nav.currentBackStackEntry?.id == screenEntry.id) nav.popBackStack()
+                        })
+                    }
+                    composable(ProfileRoutes.PROGRESS) { ProfilePlaceholderScreen(R.string.my_progress, R.string.progress_placeholder) }
+                    composable(ProfileRoutes.ACHIEVEMENTS) { ProfilePlaceholderScreen(R.string.achievements, R.string.achievements_placeholder) }
                     composable(SettingsRoutes.ROOT) {
                         SettingsScreen(openPermissions = { open(SettingsRoutes.PERMISSIONS) },
                             openBlocking = { open(SettingsRoutes.BLOCKING) }, openTheme = { open(SettingsRoutes.THEME) },

@@ -171,6 +171,22 @@ def verify_sql():
     assert connection.execute(queries["BlockSessionDao.release"], {"now": 200, "reason": "COMPLETION", "packageName": "app"}).rowcount == 1
     assert connection.execute(queries["BlockSessionDao.release"], {"now": 300, "reason": "COMPLETION", "packageName": "app"}).rowcount == 0
     assert connection.execute(queries["BlockSessionDao.active"]).fetchall() == []
+    # Use the real DAO count query, not the limited recent-events list.
+    def profile_event(kind, at, detail=""):
+        connection.execute("INSERT INTO intervention_events (packageName, appName, sessionDurationMillis, limitMillis, occurredAt, incompleteHabitCount, type, detail) VALUES ('test', 'Test', 60000, 60000, ?, 1, ?, ?)", (at, kind, detail))
+    connection.execute(queries["InterventionDao.clear"])
+    for _ in range(250):
+        profile_event("PRAISE_SHOWN", 100)
+    for kind, at, detail in (("BLOCK_TRIGGERED", 110, ""), ("BLOCK_RELEASED", 120, ""),
+            ("FALLBACK_NOTIFICATION", 130, "BLOCK: missing"), ("FALLBACK_NOTIFICATION", 140, "PRAISE: missing"),
+            ("LEGACY_NOTIFICATION", 150, ""), ("BLOCK_TRIGGERED", 99, ""), ("PRAISE_SHOWN", 200, "")):
+        profile_event(kind, at, detail)
+    count_query = queries["InterventionDao.observeInterventionCount"]
+    assert connection.execute(count_query, {"from": 100, "until": 200}).fetchone()[0] == 253
+    assert len(connection.execute(queries["InterventionDao.observeRecent"]).fetchall()) == 200
+    connection.execute(queries["InterventionDao.clear"])
+    assert connection.execute(count_query, {"from": 100, "until": 200}).fetchone()[0] == 0
+    print("PASS: actual profile count query covers full history, exclusive date bounds and excludes duplicate BLOCK fallback/releases")
     connection.close()
     print("PASS:", len(queries), "DAO queries prepared; uniqueness, local-day counts, disabled habits, cascade and event order checked on SQLite")
 

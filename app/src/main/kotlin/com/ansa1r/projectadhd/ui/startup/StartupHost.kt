@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -30,19 +29,16 @@ import kotlinx.coroutines.delay
 
 /** One in-Activity sequence: 420 + 300 + 300 + 420 + 400 = 1840 ms. */
 @Composable
-fun StartupHost(requested: Boolean, openHabitsRequest: Int, onVisibilityChanged: (Boolean) -> Unit = {}, content: @Composable () -> Unit) {
-    var visible by rememberSaveable { mutableStateOf(requested) }
-    val showing = visible && requested && openHabitsRequest == 0
-    var showTitle by remember { mutableStateOf(false) }
-    val rotation = remember { Animatable(0f) }
-    val coverAlpha = remember { Animatable(if (requested) 1f else 0f) }
+fun StartupHost(entryId: Long, onVisibilityChanged: (Boolean) -> Unit = {}, content: @Composable () -> Unit) {
+    var visible by remember(entryId) { mutableStateOf(entryId > 0) }
+    val showing = visible && entryId > 0
+    var showTitle by remember(entryId) { mutableStateOf(false) }
+    val rotation = remember(entryId) { Animatable(0f) }
+    val coverAlpha = remember(entryId) { Animatable(if (entryId > 0) 1f else 0f) }
     val gradient = Brush.verticalGradient(0f to colorResource(R.color.startup_top),
         0.48f to colorResource(R.color.startup_green), 1f to colorResource(R.color.startup_blue))
-    LaunchedEffect(openHabitsRequest) {
-        if (openHabitsRequest > 0) visible = false
-    }
     val visibilityChanged by rememberUpdatedState(onVisibilityChanged)
-    LaunchedEffect(showing) {
+    LaunchedEffect(showing, entryId) {
         visibilityChanged(showing)
         if (!showing) return@LaunchedEffect
         delay(420)
@@ -68,7 +64,7 @@ fun StartupHost(requested: Boolean, openHabitsRequest: Int, onVisibilityChanged:
                     style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, maxLines = 1,
                     modifier = Modifier.testTag("startup_title"))
                 else Image(painterResource(R.drawable.mascot_startup), stringResource(R.string.startup_mascot_description),
-                    modifier = Modifier.size(288.dp).padding(48.dp).testTag("startup_mascot"), contentScale = ContentScale.Fit)
+                    modifier = Modifier.size(256.dp).testTag("startup_mascot"), contentScale = ContentScale.Fit)
             }
         }
     }

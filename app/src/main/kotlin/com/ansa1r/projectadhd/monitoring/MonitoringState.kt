@@ -26,6 +26,13 @@ class MonitoringState {
     private val mutable = MutableStateFlow(MonitoringSnapshot())
     val state = mutable.asStateFlow()
     fun set(value: MonitoringSnapshot) { mutable.value = value }
+    fun selectionSaved(apps: List<com.ansa1r.projectadhd.domain.model.TrackedApp>) {
+        mutable.update { snapshot ->
+            val app = apps.find { it.packageName == snapshot.session?.packageName && it.enabled }
+            snapshot.copy(limitMillis = app?.limitMillis, decision = if (app == null)
+                InterventionDecision.None(NoInterventionReason.NOT_TRACKED) else snapshot.decision)
+        }
+    }
     fun stopped(issue: MonitorIssue = MonitorIssue.NONE) { mutable.value = MonitoringSnapshot(issue = issue) }
     fun starting() { mutable.update { it.copy(status = MonitorStatus.STARTING, issue = MonitorIssue.NONE) } }
 }

@@ -1,74 +1,65 @@
 package com.ansa1r.projectadhd.ui.apps
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ansa1r.projectadhd.R
 import com.ansa1r.projectadhd.ui.components.*
 
 @Composable
-fun AppsScreen(viewModel: AppsViewModel) {
+fun AppsScreen(viewModel: AppsViewModel, continueToLimits: () -> Unit, saved: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(state.saved) { if (state.saved) saved() }
     RefreshOnResume(viewModel::refresh)
-    ScreenList {
-        item { MessageBanner(viewModel) }
-        item { Text(stringResource(R.string.apps_intro)) }
-        item {
-            OutlinedTextField(value = state.query, onValueChange = viewModel::search,
-                label = { Text(stringResource(R.string.search_apps)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        }
-        item { OutlinedButton(onClick = viewModel::refresh, enabled = !state.loading) { Text(stringResource(R.string.refresh_list)) } }
-        if (state.loading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
-        if (!state.loading && state.rows.isEmpty()) item { Text(stringResource(R.string.apps_empty)) }
-        items(state.rows, key = { it.installed.packageName }) { row ->
-            SectionCard {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    InstalledAppIcon(row.installed.packageName, row.available, state.iconsRevision, viewModel.icons)
-                    Column(Modifier.weight(1f)) {
-                        Text(row.installed.displayName, style = MaterialTheme.typography.titleMedium)
-                        Text(row.installed.packageName, style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column(Modifier.fillMaxSize().testTag("app_selection")) {
+        LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            item { MessageBanner(viewModel) }
+            item {
+                OutlinedTextField(value = state.query, onValueChange = viewModel::search,
+                    label = { Text(stringResource(R.string.search_apps)) }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth().testTag("app_search"))
+            }
+            item { OutlinedButton(onClick = viewModel::refresh, enabled = !state.loading) { Text(stringResource(R.string.refresh_list)) } }
+            if (state.loading || state.draft == null) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+            if (!state.loading && state.rows.isEmpty()) item { Text(stringResource(R.string.apps_empty)) }
+            items(state.rows, key = { it.installed.packageName }) { row ->
+                SectionCard {
+                    Row(Modifier.fillMaxWidth().testTag("app_choice_" + row.installed.packageName)
+                        .toggleable(value = row.selected, role = Role.Checkbox,
+                            enabled = state.draft != null && !state.saving && (row.available || row.selected),
+                            onValueChange = { viewModel.select(row, it) }),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        InstalledAppIcon(row.installed.packageName, row.available, state.iconsRevision, viewModel.icons)
+                        Text(row.installed.displayName, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                        Checkbox(checked = row.selected, onCheckedChange = null)
                     }
-                    Checkbox(checked = row.tracked?.enabled == true,
-                        onCheckedChange = { viewModel.select(row, it) },
-                        enabled = row.available || row.tracked?.enabled == true)
-                }
-                Text(stringResource(if (row.tracked?.enabled == true) R.string.tracking_enabled else R.string.tracking_disabled))
-                Text(stringResource(R.string.session_limit_value, row.tracked?.sessionLimitMinutes ?: 15))
-                row.tracked?.let { tracked ->
-                    TextButton(onClick = { viewModel.editLimit(tracked) }) { Text(stringResource(R.string.change_limit)) }
-                }
-                if (!row.available) {
-                    Text(stringResource(R.string.app_unavailable))
-                    TextButton(onClick = { viewModel.remove(row.installed.packageName) }) { Text(stringResource(R.string.remove_from_list)) }
                 }
             }
         }
-    }
-    if (state.editingPackage != null) {
-        val valid = state.limitInput.toIntOrNull()?.let { it in 1..180 } == true
-        AlertDialog(onDismissRequest = viewModel::closeEditor,
-            title = { Text(stringResource(R.string.session_limit)) },
-            text = {
-                OutlinedTextField(value = state.limitInput, onValueChange = viewModel::limitChanged,
-                    label = { Text(stringResource(R.string.minutes)) }, singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    supportingText = { Text(stringResource(R.string.minutes_range)) },
-                    isError = !valid, enabled = !state.saving)
-            },
-            confirmButton = { TextButton(onClick = viewModel::saveLimit, enabled = valid && !state.saving) { Text(stringResource(R.string.save)) } },
-            dismissButton = { TextButton(onClick = viewModel::closeEditor, enabled = !state.saving) { Text(stringResource(R.string.cancel)) } })
+        val draft = state.draft
+        if (draft != null && (draft.selectionChanged || draft.selected.isNotEmpty())) {
+            val empty = draft.selected.isEmpty()
+            Surface(color = MaterialTheme.colorScheme.background) {
+                Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                    if (draft.selectionChanged) BrandButton(
+                        onClick = { if (empty) viewModel.save() else continueToLimits() },
+                        enabled = !state.saving && !state.saved, modifier = Modifier.fillMaxWidth().testTag("selection_action")) {
+                        Text(stringResource(if (state.saving) R.string.saving else if (empty) R.string.save else R.string.continue_selection))
+                    } else OutlinedButton(onClick = continueToLimits, enabled = !state.saving,
+                        modifier = Modifier.fillMaxWidth().testTag("edit_limits")) { Text(stringResource(R.string.configure_limits)) }
+                }
+            }
+        }
     }
 }

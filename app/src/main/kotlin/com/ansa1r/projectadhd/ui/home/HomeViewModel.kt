@@ -13,17 +13,20 @@ data class HomeUiState(
     val permissions: PermissionState = PermissionState(),
     val monitoring: MonitoringSnapshot = MonitoringSnapshot(),
     val tasks: DailyTaskSummary = DailyTaskSummary(),
-    val blocks: List<BlockSession> = emptyList()
-)
+    val blocks: List<BlockSession> = emptyList(),
+    val trackedCount: Int = 0
+) {
+    val showAppSelection: Boolean get() = !loading && com.ansa1r.projectadhd.domain.apps.showAppSelectionCta(trackedCount)
+}
 class HomeViewModel(private val container: AppContainer) : AppViewModel() {
     private val mutable = MutableStateFlow(HomeUiState())
     val state = mutable.asStateFlow()
     init {
         execute {
-            combine(container.habits.observeToday(), container.blocks.observeActive(), container.monitoring.state) { habits, blocks, monitor ->
+            combine(container.habits.observeToday(), container.blocks.observeActive(), container.monitoring.state, container.trackedApps.observeAll()) { habits, blocks, monitor, apps ->
                 val active = habits.filter { it.isActive }
                 HomeUiState(false, mutable.value.permissions, monitor,
-                    DailyTaskSummary(active.size, active.count { it.completedToday }), blocks)
+                    DailyTaskSummary(active.size, active.count { it.completedToday }), blocks, apps.count { it.enabled })
             }.collect { data -> mutable.update { data.copy(permissions = it.permissions) } }
         }
         refresh()

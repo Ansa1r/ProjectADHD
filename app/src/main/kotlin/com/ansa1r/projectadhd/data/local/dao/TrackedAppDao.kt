@@ -20,6 +20,12 @@ interface TrackedAppDao {
     @Query("DELETE FROM tracked_apps WHERE packageName = :packageName")
     suspend fun delete(packageName: String)
 
+    @Upsert
+    suspend fun saveAll(apps: List<TrackedAppEntity>)
+
+    @Query("DELETE FROM tracked_apps")
+    suspend fun deleteAll()
+
     @Query("SELECT COUNT(*) FROM tracked_apps")
     fun observeCount(): Flow<Int>
 }

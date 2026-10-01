@@ -1,31 +1,33 @@
 package com.ansa1r.projectadhd.ui.apps
 
 import com.ansa1r.projectadhd.AppContainer
+import com.ansa1r.projectadhd.R
+import com.ansa1r.projectadhd.domain.apps.AppSelectionDraft
 import com.ansa1r.projectadhd.domain.model.InstalledApp
-import com.ansa1r.projectadhd.domain.model.TrackedApp
 import com.ansa1r.projectadhd.ui.components.AppViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
-data class AppRow(val installed: InstalledApp, val tracked: TrackedApp?, val available: Boolean)
+data class AppRow(val installed: InstalledApp, val selected: Boolean, val available: Boolean)
 data class AppsUiState(
     val installed: List<InstalledApp> = emptyList(),
-    val tracked: List<TrackedApp> = emptyList(),
+    val draft: AppSelectionDraft? = null,
     val query: String = "",
     val loading: Boolean = true,
     val iconsRevision: Int = 0,
-    val editingPackage: String? = null,
-    val limitInput: String = "",
-    val saving: Boolean = false
+    val commonLimit: String = "15",
+    val edited: Boolean = false,
+    val saving: Boolean = false,
+    val saved: Boolean = false
 ) {
     val rows: List<AppRow> get() {
         val known = installed.map { it.packageName }.toSet()
-        val all = installed + tracked.filter { it.packageName !in known }.map { InstalledApp(it.packageName, it.displayName) }
-        val selected = tracked.associateBy { it.packageName }
-        return all.filter { it.displayName.contains(query, true) || it.packageName.contains(query, true) }
-            .sortedBy { it.displayName.lowercase() }
-            .map { AppRow(it, selected[it.packageName], it.packageName in known) }
+        val savedApps = draft?.persisted.orEmpty() + draft?.selected?.values.orEmpty().map { it.app }
+        val all = (installed + savedApps.filter { it.packageName !in known }
+            .map { InstalledApp(it.packageName, it.displayName) }).distinctBy { it.packageName }
+        return all.filter { it.displayName.contains(query, true) }.sortedBy { it.displayName.lowercase() }
+            .map { AppRow(it, it.packageName in draft?.selected.orEmpty(), it.packageName in known) }
     }
 }
 
@@ -34,7 +36,15 @@ class AppsViewModel(private val container: AppContainer) : AppViewModel() {
     val state = mutable.asStateFlow()
     val icons = container.appIcons
     init {
-        execute { container.trackedApps.observeAll().collect { apps -> mutable.update { it.copy(tracked = apps) } } }
+        execute {
+            container.trackedApps.observeAll().collect { apps ->
+                val current = apps.filterNot { app -> container.excludedApps.contains(app.packageName) }
+                mutable.update { state ->
+                    state.copy(draft = if (state.edited && state.draft != null)
+                        state.draft.copy(persisted = current) else AppSelectionDraft.from(current))
+                }
+            }
+        }
         refresh()
     }
     fun refresh() {
@@ -47,31 +57,34 @@ class AppsViewModel(private val container: AppContainer) : AppViewModel() {
         }
     }
     fun search(query: String) { mutable.update { it.copy(query = query) } }
-    fun select(row: AppRow, enabled: Boolean) {
-        execute {
-            container.trackedApps.save(row.tracked?.copy(enabled = enabled)
-                ?: TrackedApp(row.installed.packageName, row.installed.displayName, enabled = enabled))
+    fun select(row: AppRow, checked: Boolean) {
+        if (mutable.value.saving || mutable.value.saved || (!row.available && checked) || container.excludedApps.contains(row.installed.packageName)) return
+        mutable.update { it.copy(draft = it.draft?.select(row.installed, checked), edited = true) }
+    }
+    fun limitChanged(packageName: String, value: String) {
+        if (!mutable.value.saving && value.length <= 3 && value.all(Char::isDigit)) {
+            mutable.update { it.copy(draft = it.draft?.limit(packageName, value), edited = true) }
         }
     }
-    fun remove(packageName: String) { execute { container.trackedApps.delete(packageName) } }
-    fun editLimit(app: TrackedApp) {
-        mutable.update { it.copy(editingPackage = app.packageName, limitInput = app.sessionLimitMinutes.toString()) }
+    fun commonLimitChanged(value: String) {
+        if (!mutable.value.saving && value.length <= 3 && value.all(Char::isDigit)) mutable.update { it.copy(commonLimit = value) }
     }
-    fun limitChanged(value: String) {
-        if (value.length <= 3 && value.all(Char::isDigit)) mutable.update { it.copy(limitInput = value) }
+    fun applyToAll() {
+        if (!mutable.value.saving) mutable.update { it.copy(draft = it.draft?.applyToAll(it.commonLimit), edited = true) }
     }
-    fun closeEditor() { if (!mutable.value.saving) mutable.update { it.copy(editingPackage = null) } }
-    fun saveLimit() {
+    fun save() {
         val snapshot = mutable.value
-        val minutes = snapshot.limitInput.toIntOrNull()?.takeIf { it in 1..180 } ?: return
-        val app = snapshot.tracked.find { it.packageName == snapshot.editingPackage } ?: return
-        if (snapshot.saving) return
+        val draft = snapshot.draft ?: return
+        if (snapshot.saving || snapshot.saved || !draft.valid) return
+        val apps = draft.savedApps()
         mutable.update { it.copy(saving = true) }
-        execute {
+        // An explicit Save completes even if the user immediately navigates away.
+        container.applicationScope.launch {
             try {
-                container.trackedApps.save(app.copy(sessionLimitMinutes = minutes))
-                mutable.update { it.copy(editingPackage = null) }
-            } finally { mutable.update { it.copy(saving = false) } }
+                container.saveTrackedSelection(apps)
+                mutable.update { it.copy(draft = AppSelectionDraft.from(apps), edited = false, saving = false, saved = true) }
+            } catch (cancelled: CancellationException) { throw cancelled }
+              catch (_: Exception) { mutable.update { it.copy(saving = false) }; inform(R.string.apps_save_error) }
         }
     }
 }

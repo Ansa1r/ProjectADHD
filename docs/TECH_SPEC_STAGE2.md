@@ -1,6 +1,6 @@
 # Техническая спецификация Stage 2
 
-Актуализировано для Stage 2 UI Revision, 2026-10-01. База: `Ansa1r/ProjectADHD`, commit `d18fa8bdf499199ff8902b025cbea7b11d29ba06`. Текущие рабочие исходники находятся в `app/src/*/kotlin`; унаследованные шаблоны `src/*/java` сохраняются в копии, но исключены настройкой sourceSets. Все активные исходники используют `com.ansa1r.projectadhd`.
+Актуализировано для App Selection/Profile Fix, 2026-10-01. База: `Ansa1r/ProjectADHD`, commit `30b4c5bc73a9461f907eddd5eeed4968acceb573`. Текущие рабочие исходники находятся в `app/src/*/kotlin`; унаследованные шаблоны `src/*/java` сохраняются в копии, но исключены настройкой sourceSets. Все активные исходники используют `com.ansa1r.projectadhd`.
 
 ## Компоненты
 
@@ -35,7 +35,7 @@
 
 ## Room 2 и миграция
 
-UI Revision не меняет Room: entities, DAO, repository, schema JSON и MIGRATION_1_2 сохранены побайтово. Описанная ниже миграция относится к исходному Stage 2, а не к текущей UI-ревизии.
+App Selection/Profile Fix не меняет Room schema: entities, schema JSON и MIGRATION_1_2 сохранены побайтово. DAO/repositories дополнены транзакционным сохранением tracked selection и COUNT вмешательств для профиля. Описанная ниже миграция относится к исходному Stage 2, а не к текущей UI-ревизии.
 
 Исходные таблицы: `habits`, `habit_completions`, `tracked_apps`, `intervention_events`. Новая `block_sessions` содержит:
 
@@ -96,7 +96,7 @@ DataStore сохраняет отдельно `last_praise_at`/`praise_cooldown_
 
 ## Debug и UI
 
-Home показывает idle-маскота, today progress, active blocked app names, monitoring, компактное предупреждение о разрешениях и переходы к Habits/Apps/Stats. В нижней панели ровно 5 иконок с contentDescription: Home/Habits/Apps/Stats/Profile. Settings открывается шестерёнкой Home и содержит отдельные Permissions, Blocking Screen, Theme, Privacy и Developer. Последний пункт ведёт в Debug и существует только в debug build. Profile, Theme и Privacy — реальные локальные заглушки. Интервалы praise/fallback перенесены в Blocking Screen, аварийный STOP остаётся в корне Settings. Debug показывает пакеты, session/limit, summary, decision, все active sessions с baseline/startedAt, last unlock/praise, permission, registered window и последнюю ошибку.
+Home показывает idle-маскота, today progress, active blocked app names, monitoring, компактное предупреждение о разрешениях и переходы к Habits/Apps/Stats. В нижней панели ровно 5 иконок с contentDescription: Home/Habits/Apps/Stats/Profile. Settings открывается шестерёнкой Home и содержит отдельные Permissions, Blocking Screen, Theme, Privacy и Developer. Последний пункт ведёт в Debug и существует только в debug build. Theme и Privacy — реальные локальные заглушки. Profile показывает локальный никнейм и реальные метрики; редактор сохраняет nickname через DataStore. Progress/Achievements пока отдельные заглушки. Интервалы praise/fallback перенесены в Blocking Screen, аварийный STOP остаётся в корне Settings. Debug показывает пакеты, session/limit, summary, decision, все active sessions с baseline/startedAt, last unlock/praise, permission, registered window и последнюю ошибку.
 
 Тестовые overlay не создают challenges/events и не меняют cooldown. Чтобы никогда не закрывать собственную Activity, кнопка вооружает тест на 30 секунд: пользователь открывает выбранное приложение; service показывает тест без ожидания лимита. BLOCK preview исчезает через 10 секунд, PRAISE через 4. Настоящее BLOCK имеет приоритет. Debug недоступен в release и не подменяет production decision.
 
@@ -106,7 +106,7 @@ Home показывает idle-маскота, today progress, active blocked ap
 
 `SectionCard`, `MenuCard`, `BrandButton` задают пурпурный fill, тёмно-фиолетовый border, скругления 20–24 dp, белый текст и небольшую elevation. Settings получает тихую тёмную поверхность. Цвета только в BrandColors, launcher — в Android `values/colors.xml`. BLOCK компонует настоящие Compose Text с длительностью в минутах, числом незавершённых задач, названием приложения и CTA «Посмотреть дела». Кнопка не меняет persistent challenge; длинный экран прокручивается.
 
-`MascotView` использует отдельный `mascot_praise.png`, подготовленный из happy-референса 03 встроенным imagegen удалением фона; alpha проверен. IDLE и BLOCKING — исходные assets 06/05. Подробное происхождение и prompt — ASSETS.md. Нет emoji, встроенного в PNG текста или сетевой загрузки assets. Startup использует отдельный прозрачный happy-asset из reference 08 и gradient из Android colors, не фон 07. Compose StartupHost: hold 420 мс → flip 300+300 мс → title hold 420 мс → fade 400 мс. Системный SplashScreen стилизован тем же asset, его exit fade — 120 мс без дополнительного hold. Отдельная SplashActivity не создаётся; CTA OPEN_HABITS пропускает анимацию. Полный сценарий и ограничения времени холодного старта — в STAGE2_UI_REVISION_REPORT.md.
+`MascotView` использует отдельный `mascot_praise.png`, подготовленный из happy-референса 03 встроенным imagegen удалением фона; alpha проверен. IDLE и BLOCKING — исходные assets 06/05. Подробное происхождение и prompt — ASSETS.md. Нет emoji, встроенного в PNG текста или сетевой загрузки assets. Startup использует отдельный прозрачный happy-asset из reference 08 и gradient из Android colors, не фон 07. Compose StartupHost: hold 420 мс → flip 300+300 мс → title hold 420 мс → fade 400 мс. Системный SplashScreen использует прозрачный icon и зелёный фон; полный PNG рисуется в Compose без circular crop, exit fade — 80 мс без hold. ForegroundEntryTracker получает onStart/onStop единственной MainActivity, игнорирует configuration recreation и не зависит от FGS. Каждый background→foreground, включая CTA, запускает анимацию; внутренние маршруты её не запускают. Полный сценарий — STAGE2_APP_SELECTION_PROFILE_REPORT.md.
 
 `AppIconLoader` существует в AppContainer и обслуживает только UI. В `Dispatchers.IO` он получает `getApplicationIcon(packageName)` и преобразует Drawable (включая adaptive/vector) через `toBitmap`; размер ограничен 32–192 px, кэш Bitmap — LruCache 4 MiB. Ключ содержит пакет, размер и revision списка. `produceState` отменяется при уходе элемента, учитывает новую ревизию/доступность; при NameNotFoundException/RuntimeException отображается встроенный нейтральный значок. Domain InstalledApp и Room Entity остаются без Drawable/Bitmap.
 
@@ -136,3 +136,11 @@ Launcher использует исходный idle PNG: adaptive XML разде
 `BlockingOpacity` нормализует целые значения в 30–90 с шагом 5; отсутствующий ключ даёт 65. `AppPreferences` хранит Int `blocking_overlay_opacity_percent` в прежнем Preferences DataStore `settings`. `BlockingSettingsViewModel` обновляет preview синхронно и сохраняет значение в applicationScope; номера запросов не дают устаревшему ответу откатить новый slider. Уже начатая запись завершается после ухода со страницы.
 
 `AppContainer.applicationScope` непрерывно собирает `blockingOverlayOpacity.distinctUntilChanged()` на Main и вызывает setter существующего `OverlayController`. Compose-observable поле обновляет показанный BLOCK без remove/addView, нового таймера или новой BlockSession. На следующем poll сервис также передаёт прочитанное settings значение перед показом. Production и debug/test BLOCK используют один `BlockingContent`; preview использует тот же scrim без WindowManager и без записей Room.
+
+## Draft выбора и профиль
+
+Apps — вложенный navigation graph apps_setup с экранами apps и apps/limits. Оба используют один graph-scoped AppsViewModel; уход на другую нижнюю вкладку удаляет graph, несохранённый draft не восстанавливается. Общий openMain не читает selection/validation и всегда может перейти на Home. Draft — immutable AppSelectionDraft; checkbox/индивидуальный лимит/Apply all не вызывают DAO. Нетехнологичный список содержит только icon/name/check, недоступное выбранное приложение можно снять.
+
+Save вызывает AppContainer.saveTrackedSelection под MonitoringController.gate. TrackedAppRepository.replaceSelection выполняет deleteAll + upsert выбранных приложений + BlockRepository.reconcile в одной Room-транзакции. Удалённые пакеты получают TRACKING_DISABLED без ghost tracking, ошибка откатывает всё. После commit снимается окно удалённого пакета и обновляется текущая диагностика monitoring; polling использует новый DAO snapshot. Начатый Save живёт в applicationScope и не возвращает пользователя принудительно на Home, если тот уже ушёл на другой экран. Нередактируемый новый draft следит за обновлением persistence; активный draft сохраняет ввод.
+
+ProfileViewModel комбинирует nickname DataStore, реальные привычки сегодня, enabled TrackedApp и SQL COUNT всех событий за локальный день. Применяется полуоткрытый интервал [start,nextMidnight), учитывающий DST; BLOCK_RELEASED и BLOCK fallback не удваивают счётчик. Nickname хранится как String profile_nickname в существующем Preferences DataStore settings; trim, 1–32 Unicode code points, без внутренних control characters. До задания имени UI показывает локализованное «Пользователь»; email, аккаунты, streak и fake achievements отсутствуют.

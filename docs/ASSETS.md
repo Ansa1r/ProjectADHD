@@ -29,7 +29,7 @@ Adaptive background — XML-градиент `startup_top=#D2E1DE`, `startup_gre
 
 ## Startup и BLOCK
 
-Startup использует тот же happy PNG поверх полноэкранного Compose-градиента с общими XML-цветами. Для системного SplashScreen предусмотрен native drawable `ic_splash_mascot`: холст 288 dp, внутреннее изображение 192 dp. Compose напрямую читает PNG, поскольку `painterResource` не предназначен для native layer-list. Системный фон однотонный зелёный; exit fade раскрывает полноэкранный градиент.
+Startup использует тот же happy PNG поверх полноэкранного Compose-градиента с общими XML-цветами. В App Selection/Profile Fix Compose напрямую читает полный PNG в области 256 dp с ContentScale.Fit, без круглого clip. Системный SplashScreen использует `ic_splash_empty`: прозрачный vector, который не показывает маскот под системной маской. Системный фон однотонный зелёный; exit fade 80 мс раскрывает полноэкранный градиент. Файл PNG не перерисовывался в этой ревизии. Launcher и его Android masks отделены от собственного startup.
 
 BLOCK использует исходный `mascot_blocking.png`. На нём нет фона 07: отдельный scrim `#461062` получает настраиваемую alpha 0.30–0.90; персонаж, белый текст с тенью и фиолетовая кнопка остаются непрозрачными. Preview рисует условное приложение Compose-компонентами и тот же scrim. На ярком реальном контенте читабельность, особенно при 30%, проверяется вручную.
 

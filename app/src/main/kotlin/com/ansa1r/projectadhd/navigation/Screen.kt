@@ -20,3 +20,14 @@ object SettingsRoutes {
     const val DEBUG = "debug"
     fun isSettings(route: String) = route == ROOT || route.startsWith("$ROOT/")
 }
+
+object AppsRoutes {
+    const val ROOT = "apps_setup"
+    const val SELECTION = "apps"
+    const val LIMITS = "apps/limits"
+}
+object ProfileRoutes {
+    const val EDIT = "profile/edit"
+    const val PROGRESS = "profile/progress"
+    const val ACHIEVEMENTS = "profile/achievements"
+}

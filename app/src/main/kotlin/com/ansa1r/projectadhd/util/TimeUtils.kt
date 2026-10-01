@@ -35,3 +35,13 @@ fun durationText(millis: Long): String {
 
 fun timestampText(millis: Long?): String =
     millis?.let { SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault()).format(Date(it)) } ?: "—"
+
+data class DayBounds(val start: Long, val end: Long)
+fun dayBounds(now: Long, zone: TimeZone = TimeZone.getDefault()): DayBounds {
+    val start = dayStart(now, zone)
+    val end = Calendar.getInstance(zone).apply { timeInMillis = start; add(Calendar.DAY_OF_YEAR, 1) }.timeInMillis
+    return DayBounds(start, end)
+}
+fun currentDayBoundsFlow() = flow {
+    while (true) { emit(dayBounds(System.currentTimeMillis())); delay(1_000) }
+}.distinctUntilChanged()
