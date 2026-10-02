@@ -60,11 +60,21 @@ fun BobCoachOverlay(text: String, actionLabel: String, action: () -> Unit,
     secondary: () -> Unit = {}, enabled: Boolean = true, dismissAllowed: Boolean = false,
     onDismiss: () -> Unit = {}, mood: MascotMood = MascotMood.IDLE) {
     BackHandler { if (dismissAllowed) onDismiss() }
-    BoxWithConstraints(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).imePadding()
-        .pointerInput(Unit) { detectTapGestures { if (dismissAllowed) onDismiss() } }) {
+    val safeInsets = if (position == CoachPosition.TOP) {
+        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+    } else WindowInsets.safeDrawing
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize().windowInsetsPadding(safeInsets)
+            .then(if (position == CoachPosition.BOTTOM) Modifier.imePadding() else Modifier)
+            .testTag("bob_coach_safe_area")
+            .pointerInput(Unit) { detectTapGestures { if (dismissAllowed) onDismiss() } },
+        contentAlignment = when (position) {
+            CoachPosition.TOP -> Alignment.TopCenter
+            CoachPosition.BOTTOM -> Alignment.BottomCenter
+        }
+    ) {
         BobCoachPanel(text, actionLabel, action,
-            Modifier.align(if (position == CoachPosition.TOP) Alignment.TopCenter else Alignment.BottomCenter)
-                .padding(horizontal = 12.dp, vertical = 8.dp).heightIn(max = maxHeight * 0.48f),
+            Modifier.padding(horizontal = 12.dp, vertical = 8.dp).heightIn(max = maxHeight * 0.48f),
             position, secondaryLabel, secondary, enabled, mood)
     }
 }

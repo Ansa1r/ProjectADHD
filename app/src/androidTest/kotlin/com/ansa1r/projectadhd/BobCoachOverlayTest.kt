@@ -2,13 +2,21 @@ package com.ansa1r.projectadhd
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.ansa1r.projectadhd.domain.onboarding.OnboardingState
+import com.ansa1r.projectadhd.domain.onboarding.OnboardingStep
+import com.ansa1r.projectadhd.domain.onboarding.SetupRequirements
 import com.ansa1r.projectadhd.ui.onboarding.*
 import com.ansa1r.projectadhd.ui.theme.ProjectADHDTheme
 import org.junit.Assert.*
@@ -19,6 +27,48 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class BobCoachOverlayTest {
     @get:Rule val compose = createComposeRule()
+    @Test fun welcomeIsAtSafeTopAndContinuationKeepsHomeAtBottom() {
+        var state by mutableStateOf(OnboardingState())
+        var gapPx = 0f
+        val welcome = "Привет! Я Боб. Я помогу тебе следить за привычками и меньше отвлекаться."
+        compose.setContent { ProjectADHDTheme {
+            gapPx = with(LocalDensity.current) { 8.dp.toPx() }
+            Box(Modifier.fillMaxSize().testTag("coach_test_screen")) {
+                Scaffold(bottomBar = {
+                    NavigationBar(Modifier.testTag("coach_test_navigation")) {
+                        listOf("Home", "Habits", "Apps", "Stats", "Bob").forEach { label ->
+                            NavigationBarItem(selected = label == "Home", onClick = {},
+                                icon = { Text(label) })
+                        }
+                    }
+                }) { padding -> Box(Modifier.fillMaxSize().padding(padding)) }
+                BobCoachOverlay(
+                    text = if (state.onboardingStep == OnboardingStep.WELCOME) welcome else "Это главная страница.",
+                    actionLabel = "Продолжить",
+                    action = { state = state.advance(state.onboardingStep, SetupRequirements()) },
+                    position = coachPositionFor(state.onboardingStep)
+                )
+            }
+        } }
+        val screen = compose.onNodeWithTag("coach_test_screen").fetchSemanticsNode().boundsInRoot
+        var safeArea = compose.onNodeWithTag("bob_coach_safe_area").fetchSemanticsNode().boundsInRoot
+        var panel = compose.onNodeWithTag("bob_coach_panel").fetchSemanticsNode().boundsInRoot
+        val navigation = compose.onNodeWithTag("coach_test_navigation").fetchSemanticsNode().boundsInRoot
+        val bob = compose.onNodeWithTag("bob_coach_mascot").fetchSemanticsNode().boundsInRoot
+        val text = compose.onNodeWithText(welcome).fetchSemanticsNode().boundsInRoot
+        assertEquals(safeArea.top + gapPx, panel.top, 1f)
+        assertTrue(panel.top < screen.center.y)
+        assertTrue(panel.bottom <= navigation.top)
+        assertTrue(bob.right <= text.left)
+        compose.onNodeWithTag("coach_test_navigation").assertIsDisplayed()
+        compose.onNodeWithTag("bob_coach_primary").assertIsDisplayed().performClick()
+        compose.runOnIdle { assertEquals(OnboardingStep.HOME, state.onboardingStep) }
+        safeArea = compose.onNodeWithTag("bob_coach_safe_area").fetchSemanticsNode().boundsInRoot
+        panel = compose.onNodeWithTag("bob_coach_panel").fetchSemanticsNode().boundsInRoot
+        assertEquals(safeArea.bottom - gapPx, panel.bottom, 1f)
+        compose.onNodeWithTag("bob_coach_primary").assertIsDisplayed()
+    }
+
     @Test fun primaryWorksAndCoachDoesNotActivateUnderlyingUi() {
         var underlying = 0; var continued = 0
         compose.setContent { ProjectADHDTheme { Box(Modifier.fillMaxSize()) {

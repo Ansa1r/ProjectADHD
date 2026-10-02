@@ -4,5 +4,5 @@ package com.ansa1r.projectadhd.ui.theme
 object BrandOpacity {
     const val Ordinary = 0.70f
     const val Blocking = 0.85f
-    const val Coach = 0.50f
+    const val Coach = 0.60f
 }

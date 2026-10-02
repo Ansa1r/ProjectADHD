@@ -5,6 +5,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ansa1r.projectadhd.domain.onboarding.OnboardingStep
 import com.ansa1r.projectadhd.domain.model.MascotMood
 
+internal fun coachPositionFor(step: OnboardingStep): CoachPosition =
+    if (step == OnboardingStep.WELCOME) CoachPosition.TOP else CoachPosition.BOTTOM
+
 @Composable
 fun OnboardingCoach(vm: OnboardingViewModel, step: OnboardingStep) {
     val busy by vm.busy.collectAsStateWithLifecycle()
@@ -41,8 +44,7 @@ fun OnboardingCoach(vm: OnboardingViewModel, step: OnboardingStep) {
             if (step in setOf(OnboardingStep.SETUP_APPS, OnboardingStep.SETUP_HABIT, OnboardingStep.SETUP_PERMISSIONS)) vm.begin(step)
             else vm.advance(step)
         },
-        // The welcome points to bottom navigation; other steps explain the upper screen content.
-        position = if (step == OnboardingStep.WELCOME) CoachPosition.TOP else CoachPosition.BOTTOM,
+        position = coachPositionFor(step),
         secondaryLabel = secondary, secondary = { vm.advance(step) }, enabled = !busy,
         mood = if (step == OnboardingStep.FINAL) MascotMood.PRAISE else MascotMood.IDLE)
 }
