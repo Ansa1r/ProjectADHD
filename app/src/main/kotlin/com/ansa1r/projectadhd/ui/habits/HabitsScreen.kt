@@ -31,7 +31,7 @@ fun HabitsScreen(viewModel: HabitsViewModel, create: () -> Unit, edit: (Long) ->
         if (!state.loading && state.habits.isEmpty()) item { Text(stringResource(R.string.habits_empty)) }
         if (state.habits.any { it.type == HabitType.APP_BASED && it.isActive } && (!state.usageAllowed || !state.liveTracking)) item {
             SectionCard { Text(if (!state.usageAllowed) "Для привычек с приложением разрешите доступ к статистике использования в настройках."
-                else "Для автоматического выполнения в фоне включите мониторинг на Home. После остановки прогресс уточняется при возвращении в приложение.") }
+                else "Для автоматического выполнения в фоне включите мониторинг в Настройках. После остановки прогресс уточняется при возвращении в приложение.") }
         }
         items(state.habits, key = { it.id }) { habit ->
             SectionCard {

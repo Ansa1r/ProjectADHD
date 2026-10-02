@@ -26,7 +26,10 @@ data class HabitDailyEntity(
 @Entity(tableName = "mascot_progress")
 data class MascotEntity(
     @PrimaryKey val id: Int = 1,
-    val totalXp: Long = 0,
+    // Keep the old SQL column to preserve data and avoid platform-dependent column rename.
+    @ColumnInfo(name = "totalXp") val lifetimeXp: Long = 0,
+    @ColumnInfo(defaultValue = "1") val currentLevel: Int = 1,
+    @ColumnInfo(defaultValue = "0") val currentLevelXp: Long = 0,
     val completedHabits: Long = 0,
     val streak: Int = 0,
     val lastStreakRewardDate: String? = null,

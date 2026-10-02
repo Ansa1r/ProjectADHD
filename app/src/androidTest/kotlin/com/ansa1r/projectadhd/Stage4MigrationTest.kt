@@ -15,7 +15,7 @@ import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class Stage4MigrationTest {
-    @Test fun versionTwoDataSurvivesAndRoomValidatesVersionThree() = runBlocking {
+    @Test fun versionTwoDataSurvivesAndRoomValidatesVersionFour() = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val name = "stage4-migration-${UUID.randomUUID()}.db"
@@ -39,7 +39,7 @@ class Stage4MigrationTest {
             old.execSQL("INSERT INTO block_sessions VALUES ('video', 'Video', 300, '2026-09-30', 60000, 1020000, 0, '7', 1, NULL, NULL)")
             old.version = 2
         }
-        val db = Room.databaseBuilder(context, AppDatabase::class.java, name).addMigrations(Migrations.MIGRATION_1_2, Migrations.MIGRATION_2_3).build()
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, name).addMigrations(Migrations.MIGRATION_1_2, Migrations.MIGRATION_2_3, Migrations.MIGRATION_3_4).build()
         try {
             val h = requireNotNull(db.habits().find(7))
             assertEquals("Read", h.title); assertEquals(30, h.targetDurationMinutes); assertEquals("MANUAL", h.type); assertNull(h.linkedAppPackage)
@@ -47,9 +47,9 @@ class Stage4MigrationTest {
             assertEquals(17, db.trackedApps().find("video")?.sessionLimitMinutes)
             assertEquals("original", db.interventions().observeRecent().first().single().detail)
             assertTrue(requireNotNull(db.blocks().find("video")).active)
-            assertEquals(0L, db.progress().mascot()?.totalXp)
+            assertEquals(0L, db.progress().mascot()?.lifetimeXp)
             assertEquals(1L, db.progress().mascot()?.completedHabits)
-            assertEquals(3, db.openHelper.readableDatabase.version)
+            assertEquals(4, db.openHelper.readableDatabase.version)
         } finally { db.close(); context.deleteDatabase(name) }
     }
 }

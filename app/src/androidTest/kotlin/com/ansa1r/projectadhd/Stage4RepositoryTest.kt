@@ -53,7 +53,7 @@ class Stage4RepositoryTest {
         assertEquals(660000L, p.accumulatedMillis); assertEquals(20L, p.extraTargetMinutes)
         clock.advance(600000); habits.tick()
         coroutineScope { repeat(6) { launch { habits.confirm(id, true) } } }
-        assertEquals(15L, db.progress().mascot()?.totalXp)
+        assertEquals(15L, db.progress().mascot()?.lifetimeXp)
         assertEquals(1L, db.progress().mascot()?.completedHabits)
         assertEquals(1, db.progress().mascot()?.streak)
         assertEquals(2, db.progress().observeAwards().first().size)
@@ -63,11 +63,11 @@ class Stage4RepositoryTest {
     @Test fun onlyLastActiveHabitEarnsStreakAndRepeatedTickDoesNotDuplicate() = runBlocking { withDb { db, habits, clock ->
         val a = add(db, clock); val b = add(db, clock, "Exercise")
         awaitManual(habits, clock, a); habits.confirm(a, true)
-        assertEquals(5L, db.progress().mascot()?.totalXp)
+        assertEquals(5L, db.progress().mascot()?.lifetimeXp)
         assertEquals(0, db.progress().mascot()?.streak)
         awaitManual(habits, clock, b); habits.confirm(b, true)
         repeat(3) { habits.tick() }
-        assertEquals(20L, db.progress().mascot()?.totalXp)
+        assertEquals(20L, db.progress().mascot()?.lifetimeXp)
         assertEquals(1, db.progress().mascot()?.streak)
         assertEquals(1, db.progress().observeAwards().first().count { it.kind == "STREAK" })
     } }
@@ -84,11 +84,11 @@ class Stage4RepositoryTest {
         assertEquals(0L, today.progress.accumulatedMillis)
         assertEquals(0L, today.progress.extraTargetMinutes)
         assertFalse(today.completedToday)
-        assertEquals(15L, db.progress().mascot()?.totalXp)
+        assertEquals(15L, db.progress().mascot()?.lifetimeXp)
     } }
     @Test fun noActiveHabitsNeverMintExperienceOrStreak() = runBlocking { withDb { db, habits, clock ->
         habits.tick(); clock.advance(86_400_000); habits.tick()
-        assertEquals(0L, db.progress().mascot()?.totalXp)
+        assertEquals(0L, db.progress().mascot()?.lifetimeXp)
         assertEquals(0, db.progress().mascot()?.streak)
         assertTrue(db.progress().observeAwards().first().isEmpty())
     } }
@@ -98,7 +98,7 @@ class Stage4RepositoryTest {
         habits.creditApp(id, 20000); habits.creditApp(id, 40000); habits.creditApp(id, 60000)
         habits.creditApp(id, 60000); habits.creditApp(id, 80000)
         assertTrue(habits.observeToday().first().single().completedToday)
-        assertEquals(15L, db.progress().mascot()?.totalXp)
+        assertEquals(15L, db.progress().mascot()?.lifetimeXp)
         assertNull(BlockRepository(db).start(InterventionPayload("video", "Video", 60000, 60000, 0), clock.now.wall))
     } }
     @Test fun appCompletionReleasesExistingBlockAndStaleWindowCannotDoubleCredit() = runBlocking { withDb { db, habits, clock ->
@@ -114,7 +114,7 @@ class Stage4RepositoryTest {
         clock.advance(40000)
         habits.creditApp(id, 40000)
         assertFalse(requireNotNull(blocks.find("video")).active)
-        assertEquals(15L, db.progress().mascot()?.totalXp)
+        assertEquals(15L, db.progress().mascot()?.lifetimeXp)
     } }
     @Test fun appConflictsRejectedInBothTransactionsLegacyRowsKeptButNotBlocked() = runBlocking { withDb { db, habits, clock ->
         val tracked = TrackedAppRepository(db, BlockRepository(db))
@@ -138,10 +138,10 @@ class Stage4RepositoryTest {
         assertTrue(requireNotNull(blocks.find("video")).active)
         assertFalse(habits.observeToday().first().single().completedToday)
         assertEquals("AWAITING_CONFIRMATION", db.progress().find(id, dayKey(clock.now.wall))?.state)
-        assertEquals(0L, db.progress().mascot()?.totalXp)
+        assertEquals(0L, db.progress().mascot()?.lifetimeXp)
         db.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_xp")
         habits.confirm(id, true)
-        assertEquals(15L, db.progress().mascot()?.totalXp)
+        assertEquals(15L, db.progress().mascot()?.lifetimeXp)
     } }
     @Test fun manualSessionSurvivesProcessReopenAndRebootPausesUnknownTime() = runBlocking {
         val name = "stage4-${UUID.randomUUID()}.db"
@@ -175,15 +175,15 @@ class Stage4RepositoryTest {
     } }
     @Test fun deletingHabitKeepsEarnedXpAndHistory() = runBlocking { withDb { db, habits, clock ->
         val id = add(db, clock); awaitManual(habits, clock, id); habits.confirm(id, true); habits.delete(id)
-        assertNull(db.habits().find(id)); assertEquals(15L, db.progress().mascot()?.totalXp)
+        assertNull(db.habits().find(id)); assertEquals(15L, db.progress().mascot()?.lifetimeXp)
         assertEquals(1L, db.progress().mascot()?.completedHabits)
         assertEquals(2, db.progress().observeAwards().first().size)
     } }
     @Test fun multiplierForStreakUsesLevelAfterHabitAward() = runBlocking { withDb { db, habits, clock ->
         val id = add(db, clock); habits.tick()
-        db.progress().saveMascot(requireNotNull(db.progress().mascot()).copy(totalXp = 145))
+        db.progress().saveMascot(requireNotNull(db.progress().mascot()).copy(lifetimeXp = 820, currentLevel = 10, currentLevelXp = 145))
         awaitManual(habits, clock, id); habits.confirm(id, true)
-        assertEquals(165L, db.progress().mascot()?.totalXp)
+        assertEquals(840L, db.progress().mascot()?.lifetimeXp)
         val awards = db.progress().observeAwards().first()
         assertEquals(5L, awards.single { it.kind == "HABIT" }.awardedXp)
         assertEquals(15L, awards.single { it.kind == "STREAK" }.awardedXp)

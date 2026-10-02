@@ -14,8 +14,8 @@ android {
         applicationId = "com.ansa1r.projectadhd"
         minSdk = 24
         targetSdk = 37
-        versionCode = 6
-        versionName = "0.4.0-pre-alpha"
+        versionCode = 7
+        versionName = "0.4.1-pre-alpha"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

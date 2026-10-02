@@ -1,3 +1,5 @@
+> Исторический документ. Текущие startup, XP, onboarding и monitoring описаны в [PREALPHA_FINAL_TECH_SPEC.md](PREALPHA_FINAL_TECH_SPEC.md).
+
 # ProjectADHD 0.4 Pre-alpha — Stage 4
 
 Стадия зрелости: **Pre-alpha**. Внутренний этап: **Stage 4 — Habit System & Mascot Progression**.

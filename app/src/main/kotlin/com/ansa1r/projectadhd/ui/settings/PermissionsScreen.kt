@@ -15,11 +15,13 @@ import com.ansa1r.projectadhd.R
 import com.ansa1r.projectadhd.ui.components.*
 
 @Composable
-fun PermissionsScreen(viewModel: PermissionsViewModel) {
+fun PermissionsScreen(viewModel: PermissionsViewModel, onReady: () -> Unit = {}) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { viewModel.refresh() }
     RefreshOnResume(viewModel::refresh)
+    val ready by rememberUpdatedState(onReady)
+    LaunchedEffect(state) { if (state.onboardingReady) ready() }
     ScreenList {
         item { MessageBanner(viewModel) }
         item {

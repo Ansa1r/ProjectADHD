@@ -20,6 +20,7 @@ import com.ansa1r.projectadhd.monitoring.MonitoringState
 import com.ansa1r.projectadhd.monitoring.PermissionManager
 import com.ansa1r.projectadhd.monitoring.UsageStatsReader
 import com.ansa1r.projectadhd.notification.NotificationHelper
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.catch
@@ -38,7 +39,7 @@ class AppContainer(context: Context) {
     val uiEntries = com.ansa1r.projectadhd.domain.startup.ForegroundEntryTracker()
     private val appContext = context.applicationContext
     private val database by lazy {
-        Room.databaseBuilder(appContext, AppDatabase::class.java, "projectadhd.db").addMigrations(Migrations.MIGRATION_1_2, Migrations.MIGRATION_2_3).build()
+        Room.databaseBuilder(appContext, AppDatabase::class.java, "projectadhd.db").addMigrations(Migrations.MIGRATION_1_2, Migrations.MIGRATION_2_3, Migrations.MIGRATION_3_4).build()
     }
     val blocks by lazy { BlockRepository(database) }
     val habits by lazy { HabitRepository(database, blocks, habitClock) }
@@ -54,7 +55,7 @@ class AppContainer(context: Context) {
     val installedApps = InstalledAppReader(appContext, excludedApps)
     val usage = UsageStatsReader(appContext, permissions)
     val monitoring = MonitoringState()
-    val controller by lazy { MonitoringController(appContext, permissions, monitoring, overlays, blocks) }
+    val controller by lazy { MonitoringController(appContext, permissions, monitoring, overlays, blocks, preferences) }
     val notifications = NotificationHelper(appContext)
     val engine = InterventionEngine()
     val habitRuntime by lazy { com.ansa1r.projectadhd.monitoring.HabitRuntime(appContext, habits, usage, permissions, habitClock) }
@@ -88,6 +89,24 @@ class AppContainer(context: Context) {
         if (overlays.state.value.packageName?.let { it !in packages } == true) overlays.hide()
         if (packages.isEmpty()) overlays.cancelTest()
         monitoring.selectionSaved(apps)
+    }
+    suspend fun setupRequirements(): com.ansa1r.projectadhd.domain.onboarding.SetupRequirements =
+        com.ansa1r.projectadhd.domain.onboarding.SetupRequirements(
+            trackedApps.observeAll().first().any { it.enabled && it.sessionLimitMinutes > 0 && !excludedApps.contains(it.packageName) },
+            habits.observeToday().first().any { it.isActive }, permissions.state().onboardingReady)
+
+    fun onUiResumed() { applicationScope.launch {
+        try { controller.ensureIfEnabled() }
+        catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+        catch (_: Exception) { monitoring.stopped(com.ansa1r.projectadhd.monitoring.MonitorIssue.DATA_ERROR) }
+    } }
+    fun saveUiBackground() {
+        val at = uiEntries.lastUiBackgroundAt ?: return
+        applicationScope.launch {
+            try { preferences.markUiBackground(at) }
+            catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) { /* Diagnostic timestamp only; decisions use the in-process monotonic clock. */ }
+        }
     }
     fun recordCounts() = combine(
         database.habits().observeHabitCount(), database.habits().observeCompletionCount(),

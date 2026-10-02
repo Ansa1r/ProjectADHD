@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.withLock
 
 data class DebugUiState(
+    val onboarding: com.ansa1r.projectadhd.domain.onboarding.OnboardingState = com.ansa1r.projectadhd.domain.onboarding.OnboardingState(),
+    val lastUiBackgroundAt: Long? = null, val timeSinceBackground: Long? = null,
+    val shouldShowStartupAnimation: Boolean = false, val serviceRunning: Boolean = false,
     val mascot: com.ansa1r.projectadhd.data.local.entity.MascotEntity = com.ansa1r.projectadhd.data.local.entity.MascotEntity(),
     val habitDetails: List<Habit> = emptyList(),
     val awards: List<com.ansa1r.projectadhd.data.local.entity.XpAwardEntity> = emptyList(),
@@ -33,6 +36,9 @@ class DebugViewModel(private val container: AppContainer) : AppViewModel() {
     val state = mutable.asStateFlow()
     init {
         check(BuildConfig.DEBUG)
+        execute { container.preferences.onboarding.collect { session -> mutable.update { it.copy(onboarding = session) } } }
+        execute { container.preferences.lastUiBackgroundAt.collect { at -> mutable.update { it.copy(lastUiBackgroundAt = at) } } }
+        execute { while (true) { refresh(); kotlinx.coroutines.delay(1_000) } }
         execute { container.habits.mascot.observe().collect { mascot -> mutable.update { it.copy(mascot = mascot) } } }
         execute { container.habits.mascot.history().collect { awards -> mutable.update { it.copy(awards = awards) } } }
         execute { combine(container.habits.linkedPackages, container.trackedApps.observeAll()) { linked, apps ->
@@ -55,7 +61,10 @@ class DebugViewModel(private val container: AppContainer) : AppViewModel() {
         } }
         refresh()
     }
-    fun refresh() { mutable.update { it.copy(permissions = container.permissions.state()) } }
+    fun refresh() { mutable.update { it.copy(permissions = container.permissions.state(),
+        timeSinceBackground = container.uiEntries.timeSinceBackground(android.os.SystemClock.elapsedRealtime()),
+        shouldShowStartupAnimation = container.uiEntries.shouldShowStartupAnimation, serviceRunning = container.controller.serviceRunning) } }
+    fun grantXp(amount: Long) { execute { container.habits.mascot.grantDebugXp(amount) } }
     fun testNotification() { inform(if (container.notifications.test()) R.string.test_notification_sent else R.string.notifications_required) }
     fun simulate() {
         val decision = container.engine.decide(InterventionInput(
@@ -82,6 +91,6 @@ class DebugViewModel(private val container: AppContainer) : AppViewModel() {
             inform(R.string.blocks_cleared)
         }
     }
-    fun stop() = container.controller.stop()
+    fun stop() { execute { container.controller.stop() } }
     fun clearHistory() { execute { container.interventions.clear(); inform(R.string.history_cleared) } }
 }

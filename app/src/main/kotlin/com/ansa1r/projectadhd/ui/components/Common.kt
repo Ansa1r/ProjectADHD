@@ -35,8 +35,10 @@ import com.ansa1r.projectadhd.monitoring.MonitorStatus
 import com.ansa1r.projectadhd.ui.theme.BrandColors
 
 @Composable
-fun ScreenList(content: LazyListScope.() -> Unit) {
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp),
+fun ScreenList(focusIndex: Int? = null, content: LazyListScope.() -> Unit) {
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    androidx.compose.runtime.LaunchedEffect(focusIndex) { if (focusIndex != null) listState.scrollToItem(focusIndex) }
+    LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
 }
 
@@ -45,7 +47,7 @@ fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
     val calm = LocalCalmSurfaces.current
     Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (calm) BrandColors.Surface else BrandColors.PurpleSurface.copy(alpha = 0.85f),
+            containerColor = if (calm) BrandColors.Surface else BrandColors.PurpleSurface.copy(alpha = com.ansa1r.projectadhd.ui.theme.BrandOpacity.Ordinary),
             contentColor = BrandColors.Text),
         border = BorderStroke(if (calm) 1.dp else 2.dp, BrandColors.PurpleOutline),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {

@@ -5,7 +5,14 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ansa1r.projectadhd.ui.onboarding.BobCoachPanel
+import androidx.compose.ui.window.Dialog
+import com.ansa1r.projectadhd.ui.components.MessageBanner
+import com.ansa1r.projectadhd.ui.components.MonitorIssueText
+import com.ansa1r.projectadhd.ui.components.monitorText
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -24,19 +31,45 @@ fun SettingsScreen(
     openTheme: () -> Unit,
     openPrivacy: () -> Unit,
     openDeveloper: () -> Unit,
-    stopMonitoring: () -> Unit
+    monitoringViewModel: MonitoringSettingsViewModel,
+    stopRequest: Int = 0,
+    stopRequestHandled: () -> Unit = {}
 ) {
+    val monitoring by monitoringViewModel.state.collectAsStateWithLifecycle()
+    var confirmStop by rememberSaveable { mutableStateOf(false) }
+    var handledStopRequest by rememberSaveable { mutableIntStateOf(0) }
+    LaunchedEffect(stopRequest, monitoring.loading) {
+        if (!monitoring.loading && stopRequest > handledStopRequest) {
+            handledStopRequest = stopRequest
+            confirmStop = monitoring.preference.monitoringEnabled
+            stopRequestHandled()
+        }
+    }
     ScreenList {
+        item { MessageBanner(monitoringViewModel) }
         item { SettingsMenuItem(R.string.permissions_title, R.drawable.ic_permission, openPermissions) }
         item { SettingsMenuItem(R.string.blocking_settings, R.drawable.ic_lock, openBlocking) }
         item { SettingsMenuItem(R.string.interface_theme, R.drawable.ic_theme, openTheme) }
         item { SettingsMenuItem(R.string.privacy, R.drawable.ic_permission, openPrivacy) }
         if (BuildConfig.DEBUG) item { SettingsMenuItem(R.string.developer, R.drawable.ic_developer, openDeveloper) }
         item {
-            BrandOutlinedButton(onClick = stopMonitoring, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.stop_monitoring))
+            SectionCard {
+                Text("Мониторинг", style = MaterialTheme.typography.titleMedium)
+                Text(if (!monitoring.preference.monitoringEnabled) "Остановлен" else monitorText(monitoring.monitoring.status))
+                MonitorIssueText(monitoring.monitoring.issue)
+                BrandOutlinedButton(onClick = {
+                    if (monitoring.preference.monitoringEnabled) confirmStop = true else monitoringViewModel.setEnabled(true)
+                }, enabled = !monitoring.loading && !monitoring.busy && monitoring.preference.onboardingCompleted,
+                    modifier = Modifier.fillMaxWidth()) {
+                    Text(if (monitoring.preference.monitoringEnabled) "Остановить мониторинг" else "Включить мониторинг")
+                }
             }
         }
+    }
+    if (confirmStop) Dialog(onDismissRequest = { confirmStop = false }) {
+        BobCoachPanel("Точно хочешь остановить мониторинг? Пока он выключен, ProjectADHD не сможет следить за лимитами приложений.",
+            "Остановить", action = { confirmStop = false; monitoringViewModel.setEnabled(false) },
+            modifier = Modifier.heightIn(max = 480.dp), secondaryLabel = "Отмена", secondary = { confirmStop = false })
     }
 }
 

@@ -26,7 +26,7 @@ fun BrandButton(
 ) {
     Button(onClick = onClick, modifier = modifier.heightIn(min = 52.dp), enabled = enabled,
         shape = RoundedCornerShape(20.dp), border = BorderStroke(2.dp, BrandColors.PurpleOutline),
-        colors = ButtonDefaults.buttonColors(containerColor = BrandColors.PurpleAction.copy(alpha = if (opaque) 1f else 0.85f),
+        colors = ButtonDefaults.buttonColors(containerColor = BrandColors.PurpleAction.copy(alpha = if (opaque) 1f else com.ansa1r.projectadhd.ui.theme.BrandOpacity.Ordinary),
             contentColor = BrandColors.Text, disabledContainerColor = BrandColors.SurfaceVariant,
             disabledContentColor = BrandColors.Muted),
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp), content = content)
@@ -35,7 +35,7 @@ fun BrandButton(
 @Composable
 fun MenuCard(title: String, subtitle: String, icon: Int, onClick: () -> Unit) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = BrandColors.PurpleSurface.copy(alpha = 0.85f), contentColor = BrandColors.Text),
+        colors = CardDefaults.cardColors(containerColor = BrandColors.PurpleSurface.copy(alpha = com.ansa1r.projectadhd.ui.theme.BrandOpacity.Ordinary), contentColor = BrandColors.Text),
         border = BorderStroke(2.dp, BrandColors.PurpleOutline),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
         Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically,
@@ -56,8 +56,8 @@ fun BrandOutlinedButton(onClick: () -> Unit, modifier: Modifier = Modifier, enab
 
 @Composable
 fun brandFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedContainerColor = BrandColors.PurpleSurface.copy(alpha = 0.85f),
-    unfocusedContainerColor = BrandColors.PurpleSurface.copy(alpha = 0.85f),
+    focusedContainerColor = BrandColors.PurpleSurface.copy(alpha = com.ansa1r.projectadhd.ui.theme.BrandOpacity.Ordinary),
+    unfocusedContainerColor = BrandColors.PurpleSurface.copy(alpha = com.ansa1r.projectadhd.ui.theme.BrandOpacity.Ordinary),
     disabledContainerColor = BrandColors.SurfaceVariant,
     focusedBorderColor = BrandColors.PurpleOutline, unfocusedBorderColor = BrandColors.PurpleOutline,
     focusedTextColor = BrandColors.Text, unfocusedTextColor = BrandColors.Text,

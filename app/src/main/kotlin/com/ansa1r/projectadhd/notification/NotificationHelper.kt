@@ -41,8 +41,8 @@ class NotificationHelper(private val context: Context) {
     )
 
     fun monitoringNotification(): Notification {
-        val stop = PendingIntent.getService(context, 1,
-            Intent(context, UsageMonitoringService::class.java).setAction(UsageMonitoringService.ACTION_STOP),
+        val stop = PendingIntent.getActivity(context, 1,
+            MainActivity.stopConfirmationIntent(context),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         return NotificationCompat.Builder(context, MONITORING_CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)

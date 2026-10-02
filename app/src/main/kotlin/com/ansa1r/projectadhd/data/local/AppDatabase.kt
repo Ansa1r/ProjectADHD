@@ -16,7 +16,7 @@ import com.ansa1r.projectadhd.data.local.entity.TrackedAppEntity
 
 @Database(
     entities = [HabitEntity::class, HabitCompletionEntity::class, TrackedAppEntity::class, InterventionEventEntity::class, BlockSessionEntity::class, HabitDailyEntity::class, MascotEntity::class, XpAwardEntity::class, HabitDayEntity::class],
-    version = 3, exportSchema = true
+    version = 4, exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun progress(): HabitProgressDao

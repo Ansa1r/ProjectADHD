@@ -35,8 +35,6 @@ class HomeViewModel(private val container: AppContainer) : AppViewModel() {
         mutable.update { it.copy(permissions = container.permissions.state()) }
         execute { container.blocks.reconcile(System.currentTimeMillis()) { !container.excludedApps.contains(it) } }
     }
-    fun start() { refresh(); container.controller.start() }
-    fun stop() { container.controller.stop() }
     fun usageSettings() { if (!container.permissions.openUsageSettings()) inform(R.string.error_settings) }
     fun overlaySettings() { if (!container.permissions.openOverlaySettings()) inform(R.string.error_settings) }
     fun notificationSettings() { if (!container.permissions.openNotificationSettings()) inform(R.string.error_settings) }

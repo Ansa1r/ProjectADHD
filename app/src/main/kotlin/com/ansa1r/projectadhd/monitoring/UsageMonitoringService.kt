@@ -47,11 +47,15 @@ class UsageMonitoringService : Service() {
     private var lastElapsed = 0L
     private var stopIssue = MonitorIssue.NONE
 
+    override fun onCreate() { super.onCreate(); container.controller.serviceCreated() }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
-            container.controller.stop()
+            // Legacy notification action from an older APK: request the same visible confirmation.
+            try { startActivity(com.ansa1r.projectadhd.MainActivity.stopConfirmationIntent(this).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            catch (_: RuntimeException) { /* Keep monitoring running; Settings remains available. */ }
             return START_NOT_STICKY
         }
         if (loop?.isActive == true) return START_NOT_STICKY
@@ -67,6 +71,8 @@ class UsageMonitoringService : Service() {
         container.excludedApps.refresh()
         loop = scope.launch {
             try {
+                // Also guard service intents/recreation. Never read usage or show interventions before final onboarding.
+                if (!container.preferences.onboarding.first().shouldEnsureMonitoring) { stopSelf(); return@launch }
                 container.preferences.markMonitoringStarted(System.currentTimeMillis())
                 while (isActive) {
                     val issue = container.controller.gate.withLock {
@@ -91,6 +97,7 @@ class UsageMonitoringService : Service() {
     }
 
     private suspend fun poll(): MonitorIssue {
+        if (!container.preferences.onboarding.first().shouldEnsureMonitoring) { stopSelf(); return MonitorIssue.NONE }
         val permissions = container.permissions.state()
         if (!permissions.usageAccess) return MonitorIssue.USAGE_ACCESS
         if (!permissions.canMonitor) return MonitorIssue.NOTIFICATIONS
@@ -212,7 +219,7 @@ class UsageMonitoringService : Service() {
         container.overlays.cancelTest()
         container.overlays.hide()
         tracker.reset()
-        if (!container.controller.stopRequested) container.monitoring.stopped(stopIssue)
+        container.controller.serviceDestroyed(stopIssue)
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         super.onDestroy()
     }

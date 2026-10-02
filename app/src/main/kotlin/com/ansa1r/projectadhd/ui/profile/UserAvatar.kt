@@ -24,7 +24,7 @@ fun UserAvatar(path: String?, modifier: Modifier = Modifier) {
         value = withContext(Dispatchers.IO) { runCatching { path?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() } }.getOrNull() }
     }
     Surface(modifier, shape = CircleShape, border = BorderStroke(2.dp, BrandColors.PurpleOutline),
-        color = BrandColors.PurpleSurface.copy(alpha = 0.85f)) {
+        color = BrandColors.PurpleSurface.copy(alpha = com.ansa1r.projectadhd.ui.theme.BrandOpacity.Ordinary)) {
         bitmap?.let { Image(it, contentDescription = "Аватар пользователя", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
             ?: Icon(painterResource(R.drawable.ic_nav_profile), contentDescription = "Аватар пользователя", tint = BrandColors.Text, modifier = Modifier.padding(12.dp))
     }

@@ -9,7 +9,8 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class NavigationRevisionTest {
-    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    @get:Rule(order = 0) val onboarding = CompletedOnboardingRule()
+    @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
     private fun ready() {
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("startup_cover").fetchSemanticsNodes().isEmpty() }
     }

@@ -22,10 +22,26 @@ fun DebugScreen(viewModel: DebugViewModel) {
     ScreenList {
         item { MessageBanner(viewModel) }
         item { SectionCard {
+            Text("Запуск и onboarding", style = MaterialTheme.typography.titleLarge)
+            Detail("monitoringEnabled", state.onboarding.monitoringEnabled.toString())
+            Detail("monitoringServiceRunning", state.serviceRunning.toString())
+            Detail("onboardingCompleted", state.onboarding.onboardingCompleted.toString())
+            Detail("onboardingStep", state.onboarding.onboardingStep.name)
+            Detail("lastUiBackgroundAt", timestampText(state.lastUiBackgroundAt))
+            Detail("timeSinceBackground", state.timeSinceBackground?.let(::durationText) ?: "—")
+            Detail("shouldShowStartupAnimation", state.shouldShowStartupAnimation.toString())
+            Text("Последнее решение при входе UI; время измеряется монотонными часами.")
+            BrandOutlinedButton({ viewModel.grantXp(15) }) { Text("Тест XP: +15") }
+            BrandOutlinedButton({ viewModel.grantXp(33) }) { Text("Тест XP: +33") }
+        } }
+        item { SectionCard {
             Text("Stage 4 · Маскот", style = MaterialTheme.typography.titleLarge)
-            val level = MascotProgression.level(state.mascot.totalXp)
-            Detail("XP", state.mascot.totalXp.toString())
-            Detail("Level / next threshold / multiplier", "$level / ${MascotProgression.threshold(level)} / ${MascotProgression.multiplier(level)}")
+            val level = state.mascot.currentLevel
+            Detail("mascotLevel", level.toString())
+            Detail("mascotCurrentLevelXp", state.mascot.currentLevelXp.toString())
+            Detail("mascotRequiredXp", MascotProgression.requiredXp(level).toString())
+            Detail("mascotLifetimeXp", state.mascot.lifetimeXp.toString())
+            Detail("xpMultiplier", MascotProgression.multiplier(level).toString())
             Detail("Streak / last reward", "${state.mascot.streak} / ${state.mascot.lastStreakRewardDate ?: "—"}")
             Detail("Last habit XP award", state.awards.firstOrNull { it.kind == "HABIT" }?.let { "${it.localDate}: +${it.awardedXp} XP (${it.eventKey})" } ?: "—")
             Detail("Habit runtime error", state.habitRuntimeError ?: "—")

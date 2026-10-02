@@ -29,7 +29,7 @@ import com.ansa1r.projectadhd.ui.theme.BrandColors
 
 @Composable
 fun BlockingScrim(modifier: Modifier = Modifier) {
-    Box(modifier.background(BrandColors.BlockingScrim.copy(alpha = 0.85f)))
+    Box(modifier.background(BrandColors.BlockingScrim.copy(alpha = com.ansa1r.projectadhd.ui.theme.BrandOpacity.Blocking)))
 }
 
 @Composable
@@ -79,13 +79,13 @@ fun BlockingContent(
 @Composable
 fun PraiseContent(test: Boolean = false) {
     Surface(Modifier.padding(12.dp), shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(2.dp, BrandColors.PurpleOutline), color = BrandColors.PurpleDeep.copy(alpha = 0.85f)) {
+        border = BorderStroke(2.dp, BrandColors.PurpleOutline), color = BrandColors.PurpleDeep.copy(alpha = com.ansa1r.projectadhd.ui.theme.BrandOpacity.Ordinary)) {
         MascotBackdrop {
             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 MascotView(MascotMood.PRAISE, Modifier.size(96.dp))
                 Surface(Modifier.weight(1f), shape = RoundedCornerShape(18.dp),
-                    color = BrandColors.PurpleDeep.copy(alpha = 0.85f), contentColor = BrandColors.Text) {
+                    color = BrandColors.PurpleDeep.copy(alpha = com.ansa1r.projectadhd.ui.theme.BrandOpacity.Ordinary), contentColor = BrandColors.Text) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(stringResource(R.string.praise_title), style = MaterialTheme.typography.titleLarge)
                         Text(stringResource(R.string.praise_body), style = MaterialTheme.typography.bodyMedium)

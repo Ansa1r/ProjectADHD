@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.ansa1r.projectadhd.domain.profile.Nickname
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import com.ansa1r.projectadhd.domain.onboarding.*
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -17,6 +19,34 @@ private val Context.settingsDataStore by preferencesDataStore(name = "settings")
 
 class AppPreferences(private val store: DataStore<Preferences>) {
     constructor(context: Context) : this(context.applicationContext.settingsDataStore)
+    private val onboardingDone = booleanPreferencesKey("onboarding_completed")
+    private val onboardingStepKey = stringPreferencesKey("onboarding_step")
+    private val monitoringEnabledKey = booleanPreferencesKey("monitoring_enabled")
+    private val backgroundKey = longPreferencesKey("last_ui_background_at")
+    val lastUiBackgroundAt = store.data.map { it[backgroundKey] }.distinctUntilChanged()
+    suspend fun markUiBackground(at: Long) { store.edit { it[backgroundKey] = at } }
+
+    private fun readOnboarding(prefs: Preferences): OnboardingState {
+        val completed = prefs[onboardingDone] ?: false
+        val step = if (completed) OnboardingStep.COMPLETED else
+            OnboardingStep.entries.firstOrNull { it.name == prefs[onboardingStepKey] && it != OnboardingStep.COMPLETED } ?: OnboardingStep.WELCOME
+        return OnboardingState(completed, step, completed && (prefs[monitoringEnabledKey] ?: false))
+    }
+    val onboarding = store.data.map(::readOnboarding).distinctUntilChanged()
+    private suspend fun updateOnboarding(transform: (OnboardingState) -> OnboardingState) {
+        store.edit { prefs ->
+            val next = transform(readOnboarding(prefs))
+            prefs[onboardingDone] = next.onboardingCompleted
+            prefs[onboardingStepKey] = next.onboardingStep.name
+            prefs[monitoringEnabledKey] = next.monitoringEnabled
+        }
+    }
+    suspend fun advanceOnboarding(expected: OnboardingStep, requirements: SetupRequirements) =
+        updateOnboarding { it.advance(expected, requirements) }
+    suspend fun beginSetup(expected: OnboardingStep) = updateOnboarding { it.beginSetup(expected) }
+    suspend fun leaveOnboardingEditor() = updateOnboarding { it.leaveEditor() }
+    suspend fun setMonitoringEnabled(enabled: Boolean) = updateOnboarding { it.manualMonitoring(enabled) }
+
     private val avatarKey = stringPreferencesKey("profile_avatar_file")
     private val mascotNameKey = stringPreferencesKey("mascot_name")
     val avatar = store.data.map { it[avatarKey] }.distinctUntilChanged()

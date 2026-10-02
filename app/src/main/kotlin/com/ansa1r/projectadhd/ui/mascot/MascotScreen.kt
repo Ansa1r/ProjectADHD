@@ -21,23 +21,32 @@ fun MascotScreen(vm: MascotViewModel, customize: () -> Unit, history: () -> Unit
     val state by vm.state.collectAsStateWithLifecycle()
     var editing by rememberSaveable { mutableStateOf(false) }
     var name by rememberSaveable { mutableStateOf("") }
-    val xp = state.progress.totalXp
-    val level = MascotProgression.level(xp)
-    val floor = if (level == 1) 0L else MascotProgression.threshold(level - 1)
-    val ceiling = MascotProgression.threshold(level)
+    val xp = state.progress.currentLevelXp
+    val level = state.progress.currentLevel
+    val required = MascotProgression.requiredXp(level)
+    val compact = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 480
     ScreenList {
         item { MessageBanner(vm) }
         item { Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            MascotView(MascotMood.IDLE, Modifier.size(224.dp))
-            Text(state.name, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("mascot_name"))
-            Text("Уровень $level", style = MaterialTheme.typography.titleLarge)
-            TextButton({ name = state.name; editing = true }) { Text("Изменить имя") }
+            if (compact) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                MascotView(MascotMood.IDLE, Modifier.size(72.dp))
+                Column {
+                    Text(state.name, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.testTag("mascot_name"))
+                    Text("Уровень $level", style = MaterialTheme.typography.titleMedium)
+                    TextButton({ name = state.name; editing = true }) { Text("Изменить имя") }
+                }
+            } else {
+                MascotView(MascotMood.IDLE, Modifier.size(224.dp))
+                Text(state.name, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("mascot_name"))
+                Text("Уровень $level", style = MaterialTheme.typography.titleLarge)
+                TextButton({ name = state.name; editing = true }) { Text("Изменить имя") }
+            }
         } }
         item { SectionCard {
             if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
-            Text("${xp - floor} / ${ceiling - floor} XP", style = MaterialTheme.typography.titleLarge)
-            LinearProgressIndicator(progress = { ((xp - floor).toDouble() / (ceiling - floor)).toFloat().coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
-            Text("Всего опыта: $xp XP")
+            Text("$xp / $required XP", style = MaterialTheme.typography.titleLarge)
+            LinearProgressIndicator(progress = { (xp.toDouble() / required).toFloat().coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
+            Text("Всего опыта: ${state.progress.lifetimeXp} XP")
             Text("Выполнено привычек: ${state.progress.completedHabits}")
             Text("Серия: ${state.progress.streak} дней")
         } }
@@ -57,7 +66,7 @@ fun MascotHistoryScreen(vm: MascotViewModel) {
         item { MessageBanner(vm) }
         if (state.history.isEmpty()) item { SectionCard { Text("Здесь появятся награды за выполненные привычки и дни.") } }
         items(state.history, key = { it.eventKey }) { award -> SectionCard {
-            Text(if (award.kind == "HABIT") "Привычка выполнена" else "Все дела дня выполнены", style = MaterialTheme.typography.titleMedium)
+            Text(when (award.kind) { "HABIT" -> "Привычка выполнена"; "DEBUG" -> "Тестовый опыт (Debug)"; else -> "Все дела дня выполнены" }, style = MaterialTheme.typography.titleMedium)
             Text("+${award.awardedXp} XP · ${award.localDate}")
             Text("Уровень при получении: ${award.levelBefore}")
         } }

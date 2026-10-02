@@ -83,7 +83,13 @@ class AppsViewModel(private val container: AppContainer) : AppViewModel() {
         // An explicit Save completes even if the user immediately navigates away.
         container.applicationScope.launch {
             try {
+                if (apps.isEmpty() && container.preferences.onboarding.first().onboardingStep == com.ansa1r.projectadhd.domain.onboarding.OnboardingStep.SELECT_APPS) {
+                    mutable.update { it.copy(saving = false) }
+                    inform(R.string.onboarding_app_required)
+                    return@launch
+                }
                 container.saveTrackedSelection(apps)
+                container.preferences.advanceOnboarding(com.ansa1r.projectadhd.domain.onboarding.OnboardingStep.SELECT_APPS, container.setupRequirements())
                 mutable.update { it.copy(draft = AppSelectionDraft.from(apps), edited = false, saving = false, saved = true) }
             } catch (cancelled: CancellationException) { throw cancelled }
               catch (_: Exception) { mutable.update { it.copy(saving = false) }; inform(R.string.apps_save_error) }

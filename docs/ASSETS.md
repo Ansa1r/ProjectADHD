@@ -41,3 +41,8 @@ BLOCK использует исходный `mascot_blocking.png`. На нём �
 ## Stage 4
 
 Исходные 01–13 из нового архива находятся в `docs/assets/stage4`. Все изображения просмотрены перед работой. Runtime background/idle/blocking/praise/startup PNG сохранены побайтово. Новая векторная `ic_nav_mascot.xml` — навигационная пиктограмма. UserAvatar использует выбранную локальную фотографию или `ic_nav_profile`, не PNG Боба.
+
+
+## Final Pre-alpha references
+
+Все 13 PNG из ProjectADHD_Stage4_Finalization_Assets совпали побайтово с `docs/assets/stage4/`. Они распакованы и просмотрены. Runtime idle/blocking/praise/startup/background и launcher XML сохранены. Удалены старые launcher WEBP, возвращённые при наложении прежних ZIP; исходный текущий launcher использует существующие XML/подготовленные изображения.

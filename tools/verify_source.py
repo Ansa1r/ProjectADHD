@@ -116,7 +116,7 @@ def verify_sql():
     connection.execute("INSERT INTO intervention_events VALUES (10, 'old.app', 'Old', 60000, 60000, 30, 2)")
     migrations = (SOURCE / "data/local/Migrations.kt").read_text()
     statements = re.findall(r'db\.execSQL\((?:"""(.*?)"""|"([^"\n]*)")\)', migrations, re.S)
-    assert len(statements) == 13
+    assert len(statements) == 15
     for triple, single in statements[:3]:
         connection.execute(triple or single)
     assert connection.execute("SELECT title FROM habits WHERE id=10").fetchone() == ("Stage1 habit",)
@@ -133,7 +133,7 @@ def verify_sql():
     expected.close()
     connection.execute("INSERT INTO block_sessions VALUES ('migration.app', 'Kept', 30, '2026-09-30', 60000, 60000, 0, '10', 1, NULL, NULL)")
     before = {table: connection.execute("SELECT * FROM " + table).fetchall() for table in ("habits", "habit_completions", "tracked_apps", "intervention_events", "block_sessions")}
-    for triple, single in statements[3:]:
+    for triple, single in statements[3:13]:
         connection.execute(triple or single)
     for table, rows in before.items():
         after = connection.execute("SELECT * FROM " + table).fetchall()
@@ -142,6 +142,30 @@ def verify_sql():
     assert connection.execute("SELECT totalXp, completedHabits, streak FROM mascot_progress").fetchone() == (0, 1, 0)
     assert len(connection.execute("PRAGMA foreign_key_list(habit_daily_progress)").fetchall()) == 1
     assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
+    # The actual exported v3 schema was supplied by the current GitHub snapshot.
+    v3 = json.loads((schema_root / "3.json").read_text())["database"]
+    expected3 = sqlite3.connect(":memory:")
+    create(expected3, v3)
+    for entity in v3["entities"]:
+        table = entity["tableName"]
+        for pragma in ("table_info", "foreign_key_list", "index_list"):
+            query = "PRAGMA " + pragma + "('" + table + "')"
+            assert connection.execute(query).fetchall() == expected3.execute(query).fetchall(), (table, pragma)
+    expected3.close()
+    snapshots = {e["tableName"]: connection.execute("SELECT * FROM " + e["tableName"]).fetchall()
+        for e in v3["entities"] if e["tableName"] != "mascot_progress"}
+    connection.execute("UPDATE mascot_progress SET totalXp=48, completedHabits=9, streak=4, lastStreakRewardDate='2026-09-30', evaluatedDate='2026-10-01'")
+    for triple, single in statements[13:]:
+        connection.execute(triple or single)
+    # Exercise the real UPDATE SQL with the user-specified 48 -> level 3 / 3 XP reference.
+    # Kotlin conversion itself is covered by JUnit and the Room device migration test, NOT this Python check.
+    update_sql = re.search(r'db.execSQL\("(UPDATE mascot_progress[^"\n]+)"', migrations).group(1)
+    connection.execute(update_sql, (3, 3, 1))
+    assert connection.execute("SELECT totalXp, currentLevel, currentLevelXp, completedHabits, streak, lastStreakRewardDate, evaluatedDate FROM mascot_progress").fetchone() == (48, 3, 3, 9, 4, "2026-09-30", "2026-10-01")
+    for table, rows in snapshots.items():
+        assert connection.execute("SELECT * FROM " + table).fetchall() == rows, table
+    assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
+    print("PASS: migration chain matches exported schema 3; actual 3->4 ALTER/UPDATE SQL preserves all nine tables with reference conversion bindings")
     connection.execute("DELETE FROM block_sessions")
     print("PASS: actual MIGRATION_2_3 SQL preserves all five existing tables, duration/type defaults, no retroactive XP, FK integrity")
     connection.execute("DELETE FROM habits")

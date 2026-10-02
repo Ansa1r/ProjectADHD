@@ -146,7 +146,7 @@
     <string name="debug_block_timeout">Тест: окно исчезнет через 10 секунд. Блокировка в базу не записывается.</string>
     <string name="debug_test_hint">При включённом мониторинге нажмите тест и в течение 30 секунд откройте отслеживаемое приложение. Окно появится без ожидания лимита. Активная настоящая блокировка имеет приоритет.</string>
     <string name="debug_test_armed">Тест готов. Откройте отслеживаемое приложение в течение 30 секунд.</string>
-    <string name="debug_test_requires_monitor">Сначала включите мониторинг на Главной.</string>
+    <string name="debug_test_requires_monitor">Сначала включите мониторинг в Настройках.</string>
     <string name="debug_test_until">Тест ожидает приложение до</string>
     <string name="clear_blocks">Снять активные блокировки</string>
     <string name="blocks_cleared">Активные блокировки сняты.</string>
@@ -224,4 +224,5 @@
     <string name="mascot_history">История развития</string>
     <string name="avatar_error">Не удалось сохранить изображение. Выберите другое фото размером до 20 МБ.</string>
     <string name="habit_app_missing">Приложение недоступно. Проверьте, установлено ли оно.</string>
+    <string name="onboarding_app_required">Для начала выбери хотя бы одно приложение и сохрани его лимит.</string>
 </resources>

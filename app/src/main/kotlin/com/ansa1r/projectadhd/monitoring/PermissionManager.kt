@@ -22,6 +22,7 @@ data class PermissionState(
     val overlay: Boolean = false,
     val overlaySupported: Boolean = Build.VERSION.SDK_INT >= 26
 ) {
+    val onboardingReady: Boolean get() = canMonitor && (!overlaySupported || overlay)
     val canMonitor: Boolean get() = usageAccess && notifications && monitoringChannel && interventionChannel
 }
 

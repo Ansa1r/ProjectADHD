@@ -25,29 +25,29 @@ fun CreateHabitScreen(vm: CreateHabitViewModel, saved: () -> Unit) {
         if (state.loading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
         item { SectionCard {
             OutlinedTextField(state.title, vm::title, label = { Text("Название привычки") }, singleLine = true,
-                enabled = !state.saving, modifier = Modifier.fillMaxWidth().testTag("habit_title"), colors = brandFieldColors())
+                enabled = !state.saving && !state.committed, modifier = Modifier.fillMaxWidth().testTag("habit_title"), colors = brandFieldColors())
             Text("Время в день · HH:MM")
             Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(state.hours, vm::hours, label = { Text("HH") }, singleLine = true, enabled = vm.id == null && !state.saving,
+                OutlinedTextField(state.hours, vm::hours, label = { Text("HH") }, singleLine = true, enabled = vm.id == null && !state.saving && !state.committed,
                     modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = brandFieldColors())
                 Text(" : ")
-                OutlinedTextField(state.minutes, vm::minutes, label = { Text("MM") }, singleLine = true, enabled = vm.id == null && !state.saving,
+                OutlinedTextField(state.minutes, vm::minutes, label = { Text("MM") }, singleLine = true, enabled = vm.id == null && !state.saving && !state.committed,
                     modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = brandFieldColors())
             }
             Text("От 00:01 до 23:59. Время накапливается в течение дня.")
-            BrandButton({ picking = !picking }, Modifier.fillMaxWidth(), enabled = vm.id == null && !state.saving) {
+            BrandButton({ picking = !picking }, Modifier.fillMaxWidth(), enabled = vm.id == null && !state.saving && !state.committed) {
                 Text(state.linked?.displayName ?: "Без приложения")
             }
             if (vm.id != null) Text("Можно изменить название. Для другой длительности или приложения создайте новую привычку — текущий прогресс сохранится.")
         } }
-        if (picking && vm.id == null) {
+        if (picking && vm.id == null && !state.committed) {
             item { BrandOutlinedButton({ vm.link(null); picking = false }, Modifier.fillMaxWidth()) { Text("Без приложения") } }
             item { OutlinedTextField(state.query, vm::search, label = { Text("Поиск приложений") }, singleLine = true,
                 modifier = Modifier.fillMaxWidth(), colors = brandFieldColors()) }
             items(state.installed.filter { it.displayName.contains(state.query, true) }, key = { it.packageName }) { app ->
                 val limited = app.packageName in state.limited
                 SectionCard {
-                    Row(Modifier.fillMaxWidth().clickable(enabled = !limited && !state.saving) { vm.link(app); picking = false },
+                    Row(Modifier.fillMaxWidth().clickable(enabled = !limited && !state.saving && !state.committed) { vm.link(app); picking = false },
                         verticalAlignment = Alignment.CenterVertically) {
                         InstalledAppIcon(app.packageName, true, 0, vm.icons)
                         Column(Modifier.weight(1f)) { Text(app.displayName); if (limited) Text("Ограничено") }
@@ -58,8 +58,8 @@ fun CreateHabitScreen(vm: CreateHabitViewModel, saved: () -> Unit) {
                 }
             }
         }
-        item { BrandButton(vm::save, Modifier.fillMaxWidth().testTag("save_habit"), enabled = state.valid && !state.loading && !state.saving) {
-            Text(if (state.saving) "Сохранение…" else "Сохранить")
+        item { BrandButton(vm::save, Modifier.fillMaxWidth().testTag("save_habit"), enabled = (state.valid || state.committed) && !state.loading && !state.saving) {
+            Text(if (state.saving) "Сохранение…" else if (state.committed) "Продолжить" else "Сохранить")
         } }
     } }
 }

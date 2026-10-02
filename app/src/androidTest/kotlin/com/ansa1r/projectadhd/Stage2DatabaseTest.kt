@@ -48,7 +48,7 @@ class Stage2DatabaseTest {
             old.execSQL("INSERT INTO intervention_events VALUES (9, 'video.app', 'Video', 900000, 900000, 300, 1)")
             old.version = 1
         }
-        val db = Room.databaseBuilder(context, AppDatabase::class.java, name).addMigrations(Migrations.MIGRATION_1_2, Migrations.MIGRATION_2_3).build()
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, name).addMigrations(Migrations.MIGRATION_1_2, Migrations.MIGRATION_2_3, Migrations.MIGRATION_3_4).build()
         try {
             assertEquals("Read", db.habits().observeDay("2026-09-30").first().single().habit.title)
             assertTrue(db.habits().observeDay("2026-09-30").first().single().completedToday)
@@ -58,7 +58,7 @@ class Stage2DatabaseTest {
             assertEquals("LEGACY_NOTIFICATION", event.type)
             assertEquals("", event.detail)
             assertTrue(db.blocks().active().isEmpty())
-            assertEquals(3, db.openHelper.readableDatabase.version)
+            assertEquals(4, db.openHelper.readableDatabase.version)
         } finally { db.close(); context.deleteDatabase(name) }
     }
 

@@ -1,3 +1,5 @@
+> Исторический документ. Текущие startup, XP, onboarding и monitoring описаны в [PREALPHA_FINAL_TECH_SPEC.md](PREALPHA_FINAL_TECH_SPEC.md).
+
 > Историческая спецификация Stage1–3. Актуальное поведение: [TECH_SPEC_STAGE4.md](TECH_SPEC_STAGE4.md).
 
 # Техническая спецификация Stage 2

@@ -30,7 +30,7 @@ class HabitsViewModel(private val container: AppContainer) : AppViewModel() {
         if (!container.permissions.hasUsageAccess()) { container.permissions.openUsageSettings(); return }
         val intent = habit.linkedAppPackage?.let { context.packageManager.getLaunchIntentForPackage(it) }
         if (intent == null) { inform(R.string.habit_app_missing); return }
-        container.controller.start()
+        execute { container.controller.ensureIfEnabled() }
         try { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         catch (_: RuntimeException) { inform(R.string.habit_app_missing) }
     }

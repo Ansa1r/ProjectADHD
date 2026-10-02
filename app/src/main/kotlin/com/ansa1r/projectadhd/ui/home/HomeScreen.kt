@@ -26,7 +26,7 @@ fun HomeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     RefreshOnResume(viewModel::refresh)
-    ScreenList {
+    ScreenList(focusIndex = if (com.ansa1r.projectadhd.ui.onboarding.LocalCoachStep.current == com.ansa1r.projectadhd.domain.onboarding.OnboardingStep.HOME) 2 else null) {
         item { MessageBanner(viewModel) }
         item {
             Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -56,17 +56,6 @@ fun HomeScreen(
                 Text(stringResource(R.string.active_blocks), style = MaterialTheme.typography.titleMedium)
                 Text(state.blocks.joinToString { it.appName })
                 Text(stringResource(R.string.block_instruction))
-            }
-        }
-        item {
-            SectionCard {
-                Detail(stringResource(R.string.monitoring), monitorText(state.monitoring.status))
-                MonitorIssueText(state.monitoring.issue)
-                if (state.monitoring.status == MonitorStatus.STOPPED) {
-                    BrandButton(onClick = viewModel::start, enabled = state.permissions.canMonitor && !state.loading,
-                        modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.start_monitoring)) }
-                    if (!state.permissions.canMonitor) Text(stringResource(R.string.home_start_permission_hint))
-                } else BrandOutlinedButton(onClick = viewModel::stop, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.stop_monitoring)) }
             }
         }
         if (!state.permissions.canMonitor || !state.permissions.overlay) item {

@@ -1,3 +1,5 @@
+> Исторический документ. Текущие startup, XP, onboarding и monitoring описаны в [PREALPHA_FINAL_TECH_SPEC.md](PREALPHA_FINAL_TECH_SPEC.md).
+
 # Stage4 Pre-alpha — отчёт
 
 ## Основа и границы результата

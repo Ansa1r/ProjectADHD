@@ -31,7 +31,6 @@ class SettingsViewModel(private val container: AppContainer) : AppViewModel() {
             mutable.update { it.copy(praiseCooldown = value) }
         }
     }
-    fun stop() = container.controller.stop()
     fun save() {
         val value = mutable.value.cooldown.toIntOrNull()?.takeIf { it in 1..180 } ?: return
         val praise = mutable.value.praiseCooldown.toIntOrNull()?.takeIf { it in 1..180 } ?: return

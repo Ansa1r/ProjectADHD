@@ -43,4 +43,18 @@ object Migrations {
             db.execSQL("INSERT OR IGNORE INTO mascot_progress VALUES (1, 0, (SELECT COUNT(*) FROM habit_completions), 0, NULL, NULL)")
         }
     }
+    val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE mascot_progress ADD COLUMN currentLevel INTEGER NOT NULL DEFAULT 1")
+            db.execSQL("ALTER TABLE mascot_progress ADD COLUMN currentLevelXp INTEGER NOT NULL DEFAULT 0")
+            db.query("SELECT id, totalXp FROM mascot_progress").use { rows ->
+                while (rows.moveToNext()) {
+                    val xp = com.ansa1r.projectadhd.domain.mascot.MascotProgression.fromLifetime(rows.getLong(1).coerceAtLeast(0))
+                    db.execSQL("UPDATE mascot_progress SET currentLevel = ?, currentLevelXp = ? WHERE id = ?",
+                        arrayOf<Any>(xp.currentLevel, xp.currentLevelXp, rows.getInt(0)))
+                }
+            }
+        }
+    }
+
 }

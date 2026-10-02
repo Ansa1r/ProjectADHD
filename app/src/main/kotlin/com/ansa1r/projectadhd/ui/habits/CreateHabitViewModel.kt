@@ -5,11 +5,13 @@ import com.ansa1r.projectadhd.R
 import com.ansa1r.projectadhd.domain.model.InstalledApp
 import com.ansa1r.projectadhd.ui.components.AppViewModel
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 
 /** Target/type are configured when creating; rename never rewrites ongoing daily sessions. */
 data class CreateHabitState(val title: String = "", val hours: String = "00", val minutes: String = "30",
     val linked: InstalledApp? = null, val installed: List<InstalledApp> = emptyList(), val limited: Set<String> = emptySet(),
-    val query: String = "", val saving: Boolean = false, val saved: Boolean = false, val loading: Boolean = true) {
+    val query: String = "", val committed: Boolean = false, val saving: Boolean = false, val saved: Boolean = false, val loading: Boolean = true) {
     val target: Int? get() {
         val h = hours.toIntOrNull()?.takeIf { it in 0..23 } ?: return null
         val m = minutes.toIntOrNull()?.takeIf { it in 0..59 } ?: return null
@@ -33,21 +35,27 @@ class CreateHabitViewModel(private val container: AppContainer, val id: Long? = 
                 linked = habit?.linkedAppPackage?.let { pkg -> apps.find { a -> a.packageName == pkg } ?: InstalledApp(pkg, pkg) }) }
         }
     }
-    fun title(value: String) { if (value.length <= 120) mutable.update { it.copy(title = value) } }
-    fun hours(value: String) { if (value.length <= 2 && value.all(Char::isDigit)) mutable.update { it.copy(hours = value) } }
-    fun minutes(value: String) { if (value.length <= 2 && value.all(Char::isDigit)) mutable.update { it.copy(minutes = value) } }
-    fun search(value: String) { mutable.update { it.copy(query = value) } }
-    fun link(app: InstalledApp?) { if (app == null || com.ansa1r.projectadhd.domain.habits.HabitAppConflict.canLink(app.packageName, mutable.value.limited)) mutable.update { it.copy(linked = app) } }
+    fun title(value: String) { if (mutable.value.committed || mutable.value.saving) return; if (value.length <= 120) mutable.update { it.copy(title = value) } }
+    fun hours(value: String) { if (mutable.value.committed || mutable.value.saving) return; if (value.length <= 2 && value.all(Char::isDigit)) mutable.update { it.copy(hours = value) } }
+    fun minutes(value: String) { if (mutable.value.committed || mutable.value.saving) return; if (value.length <= 2 && value.all(Char::isDigit)) mutable.update { it.copy(minutes = value) } }
+    fun search(value: String) { if (mutable.value.committed || mutable.value.saving) return; mutable.update { it.copy(query = value) } }
+    fun link(app: InstalledApp?) { if (mutable.value.committed || mutable.value.saving) return; if (app == null || com.ansa1r.projectadhd.domain.habits.HabitAppConflict.canLink(app.packageName, mutable.value.limited)) mutable.update { it.copy(linked = app) } }
     fun save() {
         val current = mutable.value
-        if (!current.valid || current.saving || current.loading) return
+        if ((!current.valid && !current.committed) || current.saving || current.loading || current.saved) return
         mutable.update { it.copy(saving = true) }
-        execute {
+        container.applicationScope.launch {
             try {
-                require(current.linked == null || !container.excludedApps.contains(current.linked.packageName))
-                container.habits.save(id, current.title, requireNotNull(current.target), current.linked?.packageName)
+                if (!current.committed) {
+                    require(current.linked == null || !container.excludedApps.contains(current.linked.packageName))
+                    container.habits.save(id, current.title, requireNotNull(current.target), current.linked?.packageName)
+                    mutable.update { it.copy(committed = true) }
+                }
+                if (id == null) container.preferences.advanceOnboarding(com.ansa1r.projectadhd.domain.onboarding.OnboardingStep.CREATE_HABIT, container.setupRequirements())
                 mutable.update { it.copy(saved = true) }
-            } finally { mutable.update { it.copy(saving = false) } }
+            } catch (cancelled: CancellationException) { throw cancelled }
+              catch (_: Exception) { inform(R.string.error_operation) }
+            finally { mutable.update { it.copy(saving = false) } }
         }
     }
 }
