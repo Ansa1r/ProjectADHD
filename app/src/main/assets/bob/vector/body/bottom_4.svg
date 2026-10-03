@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<title>BOTTOM_4</title>
+<defs><linearGradient id="body" x1="129" y1="112" x2="276" y2="341" gradientUnits="userSpaceOnUse"><stop stop-color="#bd3be4" /><stop offset="0.5" stop-color="#b739d8" /><stop offset="1" stop-color="#a733c8" /></linearGradient>
+</defs>
+<g id="BOTTOM_4">
+<path d="M245 291 C241 299 242 312 251 323 C262 336 282 341 297 336 C309 332 312 322 306 311 C297 299 279 292 267 289 Z" fill="url(#body)"/>
+<path d="M255 322 C267 329 283 334 297 329 C302 327 307 322 307 318 C313 329 305 337 293 338 C277 341 263 333 255 322 Z" fill="#cb49e4" opacity="0.55"/>
+</g>
+</svg>

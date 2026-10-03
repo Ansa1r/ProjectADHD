@@ -52,7 +52,7 @@ fun BlockingContent(
             if (confirmation != null && !test) {
                 HabitConfirmation(confirmation, onYes = { confirm(confirmation.id, true) }, onNo = { confirm(confirmation.id, false) }, opaqueButtons = true)
             } else {
-            MascotView(MascotMood.BLOCKING, Modifier.size(180.dp))
+            MascotView(MascotMood.BLOCKING, Modifier.size(180.dp), isTalking = true)
             Text(stringResource(R.string.block_title), color = BrandColors.Text,
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, shadow = shadow),
                 textAlign = TextAlign.Center)

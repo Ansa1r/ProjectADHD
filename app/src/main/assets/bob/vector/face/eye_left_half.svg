@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<title>EYE_LEFT_HALF</title>
+<defs><linearGradient id="eyeBlue" x1="180" y1="159" x2="177" y2="233" gradientUnits="userSpaceOnUse"><stop stop-color="#090845" /><stop offset="0.43" stop-color="#063784" /><stop offset="0.75" stop-color="#007fe4" /><stop offset="1" stop-color="#00f7e8" /></linearGradient>
+<radialGradient id="eyeGlow" cx="179" cy="224" r="36" gradientUnits="userSpaceOnUse"><stop stop-color="#00fff1" /><stop offset="0.44" stop-color="#00c9f7" /><stop offset="1" stop-color="#0057c4" /></radialGradient>
+<clipPath id="EYE_LEFT_HALF_clip"><path d="M144 192 Q172 182 207 189 C208 210 190 235 166 233 C148 233 139 216 144 192 Z"/></clipPath></defs>
+<g id="EYE_LEFT_HALF">
+<g clip-path="url(#EYE_LEFT_HALF_clip)">
+<path d="M177 156 C157 151 143 172 140 194 C136 215 148 232 164 233 C185 236 203 216 207 194 C212 174 199 156 177 156 Z" fill="#13074b"/>
+<path d="M177 161 C160 157 149 176 146 196 C143 214 153 228 167 228 C185 230 199 211 202 193 C206 176 194 161 177 161 Z" fill="url(#eyeBlue)"/>
+<path d="M151 203 C154 187 170 182 184 190 C198 198 195 222 180 230 C165 237 149 224 151 203 Z" fill="url(#eyeGlow)"/>
+<path d="M151 213 C151 205 150 199 154 193 C154 204 157 212 161 216 L159 222 Z" fill="#36eaff" opacity="0.8"/>
+<path d="M167 217 C174 211 185 215 186 222 C186 230 176 236 169 232 C164 228 163 221 167 217 Z" fill="#00fff1"/>
+<path d="M159 169 C164 162 171 163 170 169 C169 174 163 179 159 179 C153 179 155 173 159 169 Z" fill="#f7fcff"/>
+<path d="M172 221 C175 218 178 220 175 223 L173 225 L176 227 C176 229 170 228 169 225 Z" fill="#e1ffff"/>
+<path d="M192 209 C194 206 197 208 195 211 C193 214 190 213 192 209 Z" fill="#a9ffff" opacity="0.9"/>
+</g>
+<path d="M144 192 Q172 182 207 189" fill="none" stroke="#23104a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

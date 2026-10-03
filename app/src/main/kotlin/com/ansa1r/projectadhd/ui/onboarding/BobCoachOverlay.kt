@@ -30,14 +30,14 @@ enum class CoachPosition { TOP, BOTTOM }
 fun BobCoachPanel(text: String, actionLabel: String, action: () -> Unit,
     modifier: Modifier = Modifier, position: CoachPosition = CoachPosition.BOTTOM,
     secondaryLabel: String? = null, secondary: () -> Unit = {}, enabled: Boolean = true,
-    mood: MascotMood = MascotMood.IDLE) {
+    mood: MascotMood = MascotMood.IDLE, isTalking: Boolean = false) {
     Surface(modifier.fillMaxWidth().testTag("bob_coach_panel").semantics { paneTitle = "Боб"; liveRegion = LiveRegionMode.Polite }
         .pointerInput(Unit) { detectTapGestures { } }, shape = RoundedCornerShape(20.dp),
         color = BrandColors.PurpleDeep.copy(alpha = BrandOpacity.Coach), contentColor = BrandColors.Text,
         border = BorderStroke(2.dp, BrandColors.PurpleOutline), tonalElevation = 0.dp) {
         Row(Modifier.verticalScroll(rememberScrollState()).padding(12.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (position == CoachPosition.TOP) MascotView(mood, Modifier.size(72.dp).testTag("bob_coach_mascot"))
+            if (position == CoachPosition.TOP) MascotView(mood, Modifier.size(72.dp).testTag("bob_coach_mascot"), isTalking = isTalking)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(text, style = MaterialTheme.typography.bodyMedium, color = BrandColors.Text)
                 BrandButton(action, Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("bob_coach_primary"), enabled = enabled, opaque = true) {
@@ -48,7 +48,7 @@ fun BobCoachPanel(text: String, actionLabel: String, action: () -> Unit,
                     Text(secondaryLabel, color = BrandColors.Text)
                 }
             }
-            if (position == CoachPosition.BOTTOM) MascotView(mood, Modifier.size(72.dp).testTag("bob_coach_mascot"))
+            if (position == CoachPosition.BOTTOM) MascotView(mood, Modifier.size(72.dp).testTag("bob_coach_mascot"), isTalking = isTalking)
         }
     }
 }
@@ -58,7 +58,7 @@ fun BobCoachPanel(text: String, actionLabel: String, action: () -> Unit,
 fun BobCoachOverlay(text: String, actionLabel: String, action: () -> Unit,
     position: CoachPosition = CoachPosition.BOTTOM, secondaryLabel: String? = null,
     secondary: () -> Unit = {}, enabled: Boolean = true, dismissAllowed: Boolean = false,
-    onDismiss: () -> Unit = {}, mood: MascotMood = MascotMood.IDLE) {
+    onDismiss: () -> Unit = {}, mood: MascotMood = MascotMood.IDLE, isTalking: Boolean = false) {
     BackHandler { if (dismissAllowed) onDismiss() }
     val safeInsets = if (position == CoachPosition.TOP) {
         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
@@ -75,6 +75,6 @@ fun BobCoachOverlay(text: String, actionLabel: String, action: () -> Unit,
     ) {
         BobCoachPanel(text, actionLabel, action,
             Modifier.padding(horizontal = 12.dp, vertical = 8.dp).heightIn(max = maxHeight * 0.48f),
-            position, secondaryLabel, secondary, enabled, mood)
+            position, secondaryLabel, secondary, enabled, mood, isTalking)
     }
 }

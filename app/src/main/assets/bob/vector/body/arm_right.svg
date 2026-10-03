@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<title>ARM_RIGHT</title>
+<defs><linearGradient id="body" x1="129" y1="112" x2="276" y2="341" gradientUnits="userSpaceOnUse"><stop stop-color="#bd3be4" /><stop offset="0.5" stop-color="#b739d8" /><stop offset="1" stop-color="#a733c8" /></linearGradient>
+</defs>
+<g id="ARM_RIGHT">
+<path d="M304 227 C313 229 324 233 330 240 C335 245 339 250 335 255 C331 260 323 254 316 251 L305 246 Z" fill="url(#body)"/>
+<path d="M315 235 C322 243 328 250 335 252 C335 257 330 258 323 253 L313 247 Z" fill="#8f27b5" opacity="0.45"/>
+</g>
+</svg>

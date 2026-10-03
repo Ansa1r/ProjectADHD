@@ -1,0 +1,20 @@
+{
+  "source_commit": "6f5b4bbf0634023fe53011781e1d2db0b2597952",
+  "baseline_blobs": 242,
+  "modified_existing_files": [
+    "app/src/main/kotlin/com/ansa1r/projectadhd/ui/debug/DebugScreen.kt",
+    "app/src/main/kotlin/com/ansa1r/projectadhd/ui/mascot/InterventionContent.kt",
+    "app/src/main/kotlin/com/ansa1r/projectadhd/ui/mascot/MascotView.kt",
+    "app/src/main/kotlin/com/ansa1r/projectadhd/ui/onboarding/BobCoachOverlay.kt",
+    "app/src/main/kotlin/com/ansa1r/projectadhd/ui/onboarding/OnboardingCoach.kt"
+  ],
+  "unchanged_existing_files": 237,
+  "removed": [],
+  "editable_svg_count": 36,
+  "source_path_count": 99,
+  "source_svg_bytes": 26435,
+  "static_scope_and_vector_checks": "passed",
+  "SVG_render_review": "completed",
+  "Android_tests": "blocked before compilation by Gradle network access",
+  "APK_created": false
+}

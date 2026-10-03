@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<title>ARM_LEFT</title>
+<defs><linearGradient id="body" x1="129" y1="112" x2="276" y2="341" gradientUnits="userSpaceOnUse"><stop stop-color="#bd3be4" /><stop offset="0.5" stop-color="#b739d8" /><stop offset="1" stop-color="#a733c8" /></linearGradient>
+</defs>
+<g id="ARM_LEFT">
+<path d="M112 261 C105 260 97 266 92 277 C86 289 87 303 94 307 C101 311 112 301 118 295 C125 289 126 281 121 271 Z" fill="url(#body)"/>
+<path d="M110 265 C101 268 93 280 93 291 C94 299 98 301 103 298 C100 289 111 280 116 277 Z" fill="#9024b8" opacity="0.62"/>
+<path d="M95 287 C89 298 92 305 97 306 L105 302 C99 303 94 299 95 287 Z" fill="#dc56e9" opacity="0.45"/>
+</g>
+</svg>

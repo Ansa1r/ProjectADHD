@@ -46,5 +46,6 @@ fun OnboardingCoach(vm: OnboardingViewModel, step: OnboardingStep) {
         },
         position = coachPositionFor(step),
         secondaryLabel = secondary, secondary = { vm.advance(step) }, enabled = !busy,
-        mood = if (step == OnboardingStep.FINAL) MascotMood.PRAISE else MascotMood.IDLE)
+        mood = if (step == OnboardingStep.FINAL) MascotMood.PRAISE else MascotMood.IDLE,
+        isTalking = step == OnboardingStep.WELCOME)
 }

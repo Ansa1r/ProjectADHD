@@ -21,6 +21,7 @@ fun DebugScreen(viewModel: DebugViewModel) {
     RefreshOnResume(viewModel::refresh)
     ScreenList {
         item { MessageBanner(viewModel) }
+        item { BobAnimationPreview() }
         item { SectionCard {
             Text("Запуск и onboarding", style = MaterialTheme.typography.titleLarge)
             Detail("monitoringEnabled", state.onboarding.monitoringEnabled.toString())

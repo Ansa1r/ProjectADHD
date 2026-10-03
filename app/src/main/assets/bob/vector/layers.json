@@ -1,0 +1,302 @@
+{
+  "viewBox": [
+    0,
+    0,
+    400,
+    400
+  ],
+  "rootPivot": [
+    214,
+    218
+  ],
+  "layers": [
+    {
+      "id": "BODY_BASE",
+      "file": "source/body_base.svg",
+      "pivot": [
+        214,
+        227
+      ]
+    },
+    {
+      "id": "BOTTOM_1",
+      "file": "body/bottom_1.svg",
+      "pivot": [
+        123,
+        284
+      ]
+    },
+    {
+      "id": "BOTTOM_2",
+      "file": "body/bottom_2.svg",
+      "pivot": [
+        164,
+        292
+      ]
+    },
+    {
+      "id": "BOTTOM_3",
+      "file": "body/bottom_3.svg",
+      "pivot": [
+        215,
+        300
+      ]
+    },
+    {
+      "id": "BOTTOM_4",
+      "file": "body/bottom_4.svg",
+      "pivot": [
+        267,
+        297
+      ]
+    },
+    {
+      "id": "ARM_LEFT",
+      "file": "body/arm_left.svg",
+      "pivot": [
+        114,
+        276
+      ]
+    },
+    {
+      "id": "ARM_RIGHT",
+      "file": "body/arm_right.svg",
+      "pivot": [
+        310,
+        244
+      ]
+    },
+    {
+      "id": "HAIR",
+      "file": "source/hair.svg",
+      "pivot": [
+        221,
+        115
+      ]
+    },
+    {
+      "id": "SCARF_NECK",
+      "file": "source/scarf_neck.svg",
+      "pivot": [
+        218,
+        258
+      ]
+    },
+    {
+      "id": "SCARF_TAIL",
+      "file": "source/scarf_tail.svg",
+      "pivot": [
+        248,
+        258
+      ]
+    },
+    {
+      "id": "BLUSH",
+      "file": "face/blush.svg",
+      "pivot": [
+        219,
+        233
+      ]
+    },
+    {
+      "id": "EYEBROW_LEFT",
+      "file": "face/eyebrow_left.svg",
+      "pivot": [
+        220,
+        146
+      ]
+    },
+    {
+      "id": "EYEBROW_RIGHT",
+      "file": "face/eyebrow_right.svg",
+      "pivot": [
+        220,
+        146
+      ]
+    },
+    {
+      "id": "EYEBROW_LEFT_BLOCKING",
+      "file": "face/eyebrow_left_blocking.svg",
+      "pivot": [
+        220,
+        146
+      ]
+    },
+    {
+      "id": "EYEBROW_RIGHT_BLOCKING",
+      "file": "face/eyebrow_right_blocking.svg",
+      "pivot": [
+        220,
+        146
+      ]
+    },
+    {
+      "id": "EYE_LEFT_OPEN",
+      "file": "face/eye_left_open.svg",
+      "pivot": [
+        174,
+        195
+      ]
+    },
+    {
+      "id": "EYE_LEFT_HALF",
+      "file": "face/eye_left_half.svg",
+      "pivot": [
+        174,
+        195
+      ]
+    },
+    {
+      "id": "EYE_LEFT_CLOSED",
+      "file": "face/eye_left_closed.svg",
+      "pivot": [
+        174,
+        202
+      ]
+    },
+    {
+      "id": "EYE_LEFT_HAPPY",
+      "file": "face/eye_left_happy.svg",
+      "pivot": [
+        174,
+        193
+      ]
+    },
+    {
+      "id": "EYE_LEFT_HAPPY_HALF",
+      "file": "face/eye_left_happy_half.svg",
+      "pivot": [
+        174,
+        193
+      ]
+    },
+    {
+      "id": "EYE_LEFT_HAPPY_CLOSED",
+      "file": "face/eye_left_happy_closed.svg",
+      "pivot": [
+        174,
+        198
+      ]
+    },
+    {
+      "id": "EYE_RIGHT_OPEN",
+      "file": "face/eye_right_open.svg",
+      "pivot": [
+        265,
+        195
+      ]
+    },
+    {
+      "id": "EYE_RIGHT_HALF",
+      "file": "face/eye_right_half.svg",
+      "pivot": [
+        265,
+        195
+      ]
+    },
+    {
+      "id": "EYE_RIGHT_CLOSED",
+      "file": "face/eye_right_closed.svg",
+      "pivot": [
+        265,
+        202
+      ]
+    },
+    {
+      "id": "EYE_RIGHT_HAPPY",
+      "file": "face/eye_right_happy.svg",
+      "pivot": [
+        265,
+        193
+      ]
+    },
+    {
+      "id": "EYE_RIGHT_HAPPY_HALF",
+      "file": "face/eye_right_happy_half.svg",
+      "pivot": [
+        265,
+        193
+      ]
+    },
+    {
+      "id": "EYE_RIGHT_HAPPY_CLOSED",
+      "file": "face/eye_right_happy_closed.svg",
+      "pivot": [
+        265,
+        198
+      ]
+    },
+    {
+      "id": "MOUTH_IDLE",
+      "file": "face/mouth_idle.svg",
+      "pivot": [
+        220,
+        236
+      ]
+    },
+    {
+      "id": "MOUTH_SMILE",
+      "file": "face/mouth_smile.svg",
+      "pivot": [
+        220,
+        236
+      ]
+    },
+    {
+      "id": "MOUTH_SMALL",
+      "file": "face/mouth_small.svg",
+      "pivot": [
+        220,
+        236
+      ]
+    },
+    {
+      "id": "MOUTH_MEDIUM",
+      "file": "face/mouth_medium.svg",
+      "pivot": [
+        220,
+        236
+      ]
+    },
+    {
+      "id": "MOUTH_WIDE",
+      "file": "face/mouth_wide.svg",
+      "pivot": [
+        220,
+        236
+      ]
+    },
+    {
+      "id": "MOUTH_BLOCKING_IDLE",
+      "file": "face/mouth_blocking_idle.svg",
+      "pivot": [
+        220,
+        236
+      ]
+    },
+    {
+      "id": "MOUTH_BLOCKING_SMALL",
+      "file": "face/mouth_blocking_small.svg",
+      "pivot": [
+        220,
+        236
+      ]
+    },
+    {
+      "id": "MOUTH_BLOCKING_MEDIUM",
+      "file": "face/mouth_blocking_medium.svg",
+      "pivot": [
+        220,
+        236
+      ]
+    },
+    {
+      "id": "MOUTH_BLOCKING_WIDE",
+      "file": "face/mouth_blocking_wide.svg",
+      "pivot": [
+        220,
+        236
+      ]
+    }
+  ]
+}

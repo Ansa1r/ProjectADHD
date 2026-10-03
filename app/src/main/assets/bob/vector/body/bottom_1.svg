@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<title>BOTTOM_1</title>
+<defs><linearGradient id="body" x1="129" y1="112" x2="276" y2="341" gradientUnits="userSpaceOnUse"><stop stop-color="#bd3be4" /><stop offset="0.5" stop-color="#b739d8" /><stop offset="1" stop-color="#a733c8" /></linearGradient>
+</defs>
+<g id="BOTTOM_1">
+<path d="M112 274 C101 279 99 294 104 308 C107 325 118 338 130 337 C143 338 151 327 151 316 C151 298 133 281 126 277 Z" fill="url(#body)"/>
+<path d="M105 305 C111 320 119 328 129 328 C137 328 144 324 147 318 C145 332 137 337 129 337 C115 337 108 326 105 305 Z" fill="#cb49e4" opacity="0.55"/>
+</g>
+</svg>
