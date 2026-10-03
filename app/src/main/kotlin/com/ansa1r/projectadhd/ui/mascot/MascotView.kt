@@ -14,8 +14,8 @@ import com.ansa1r.projectadhd.ui.mascot.animation.BobAnimationState
 import com.ansa1r.projectadhd.ui.mascot.animation.BobMascot
 
 @Composable
-fun MascotView(mood: MascotMood, modifier: Modifier = Modifier, isTalking: Boolean = false) {
-    BobMascot(modifier = modifier, isTalking = isTalking, state = when (mood) {
+fun MascotView(mood: MascotMood, modifier: Modifier = Modifier, isTalking: Boolean = false, speechElapsedMillis: Int? = null) {
+    BobMascot(modifier = modifier, isTalking = isTalking, speechElapsedMillis = speechElapsedMillis, state = when (mood) {
         MascotMood.IDLE -> BobAnimationState.IDLE
         MascotMood.BLOCKING -> BobAnimationState.BLOCKING
         MascotMood.PRAISE -> BobAnimationState.HAPPY

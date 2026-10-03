@@ -1,14 +1,14 @@
-# ProjectADHD — Final Pre-alpha Revision
+# ProjectADHD — Bob Dialogue System v1
 
-Текущая версия: **0.4.1-pre-alpha**, `versionCode = 7`. Цель следующего выпуска: **0.5.0 Alpha**.
+Обновление Alpha: Coach Panel внутри Scaffold над Bottom Navigation, PCM pseudo-speech, рот и typewriter-текст от единого audio playhead. Сборочные metadata из исходного проекта сохранены: `versionName = 0.4.1-pre-alpha`, `versionCode = 7`.
 
-Изменения для перехода в Alpha внесены, но выпуск **ещё не подтверждён**: в среде подготовки обе команды Gradle останавливаются при загрузке Gradle 9.6.0 (`Network is unreachable`). Kotlin/JUnit, APK и сценарии на Android не проверены. Поэтому условие перехода в Alpha из задания пока не выполнено. Имя поставляемого ZIP `ProjectADHD_Alpha_0.5.0.zip` обозначает целевой этап, а не подтверждённую версию внутри.
+Проверка 2026-10-03: `testDebugUnitTest` — 153 теста, 0 ошибок; `assembleDebug` — BUILD SUCCESSFUL, debug APK собран. Сценарии интерфейса и звучание на устройстве требуют ручной приёмки. Актуальные результаты и ограничения: [ALPHA_BOB_DIALOGUE_REPORT](docs/ALPHA_BOB_DIALOGUE_REPORT.md).
 
 ProjectADHD — локальное Android-приложение для привычек и ограничения отвлекающих приложений. Namespace и applicationId: `com.ansa1r.projectadhd`.
 
 ## Возможности
 
-- Guided onboarding с Бобом поверх настоящих Home, Habits, Apps, Stats и Mascot. Сначала приветствие, затем экскурсия, затем реальная настройка.
+- Guided onboarding с Бобом на настоящих Home, Habits, Apps, Stats и Mascot. Coach Panel резервирует место над нижним меню; основное содержимое учитывает Scaffold padding. Каждая реплика запускает отдельную плавную PCM-фразу. Первое нажатие раскрывает текст и гасит звук, следующее продолжает прежнюю последовательность настройки.
 - Выбор приложений и индивидуальных лимитов, создание первой привычки, проверка Usage Access, Overlay и уведомлений. На API 24–25 сохраняется существующий notification fallback.
 - Автоматический мониторинг только после финального «Готово» Боба. При следующих открытиях сервис проверяется и запускается, если сохранённое предпочтение включено.
 - Постоянная настройка мониторинга внизу Settings; остановка с подтверждением Боба. Отмена ничего не меняет. Stop переживает перезапуск.
@@ -17,7 +17,7 @@ ProjectADHD — локальное Android-приложение для прив�
 - Mascot: имя Боба, уровень, XP внутри уровня, lifetime XP, streak и история наград.
 - MANUAL/APP_BASED Habits, накопление времени, подтверждение ручной привычки, +10 минут после «Нет», автоматическое выполнение app-based привычки, защита от конфликтов с ограничениями.
 - Существующие BlockSession, Blocking Overlay, PRAISE, fallback notifications, статистика и Debug.
-- Purple fill: обычный UI 0.70, blocking scrim 0.85, панель Боба 0.50; прозрачность не применяется ко всему компоненту.
+- Purple fill: обычный UI 0.70, blocking scrim 0.85, панель Боба 0.60; прозрачность не применяется ко всему компоненту.
 
 ## Сборка и проверка
 
@@ -45,9 +45,13 @@ DataStore сохраняет этап onboarding и выбор монитори�
 
 ## Документация
 
+- [Архитектура Bob Dialogue](docs/ALPHA_BOB_DIALOGUE_ARCHITECTURE.md)
+- [Ручная проверка диалогов](docs/ALPHA_BOB_DIALOGUE_MANUAL_TEST.md)
+- [Отчёт по текущему обновлению](docs/ALPHA_BOB_DIALOGUE_REPORT.md)
+
 - [Техническое описание](docs/PREALPHA_FINAL_TECH_SPEC.md)
 - [Ручная приёмка A–O, UI и регрессии](docs/PREALPHA_FINAL_MANUAL_TEST.md)
 - [Отчёт, полный список файлов и ограничения](docs/PREALPHA_FINAL_REPORT.md)
 - [Исходные Stage4-материалы](docs/assets/stage4/)
 
-Исторические Stage 2/4 документы сохранены; текущий порядок запуска, XP и мониторинга определён документами `PREALPHA_FINAL_*`.
+Исторические Stage 2/4 и WELCOME-only отчёты сохранены. Для Coach Panel/audio/typewriter актуальны `ALPHA_BOB_DIALOGUE_*`; логика запуска, XP и мониторинга из `PREALPHA_FINAL_*` не перерабатывалась.

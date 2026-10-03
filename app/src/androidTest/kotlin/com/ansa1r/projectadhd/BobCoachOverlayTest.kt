@@ -8,15 +8,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.ansa1r.projectadhd.domain.onboarding.OnboardingState
-import com.ansa1r.projectadhd.domain.onboarding.OnboardingStep
-import com.ansa1r.projectadhd.domain.onboarding.SetupRequirements
 import com.ansa1r.projectadhd.ui.onboarding.*
 import com.ansa1r.projectadhd.ui.theme.ProjectADHDTheme
 import org.junit.Assert.*
@@ -27,46 +23,45 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class BobCoachOverlayTest {
     @get:Rule val compose = createComposeRule()
-    @Test fun welcomeIsAtSafeTopAndContinuationKeepsHomeAtBottom() {
-        var state by mutableStateOf(OnboardingState())
-        var gapPx = 0f
+    @Test fun coachReservesScaffoldSpaceAndDoesNotMoveWhileTextAppears() {
+        var visibleLength by mutableIntStateOf(0)
+        var showCoach by mutableStateOf(true)
         val welcome = "Привет! Я Боб. Я помогу тебе следить за привычками и меньше отвлекаться."
         compose.setContent { ProjectADHDTheme {
-            gapPx = with(LocalDensity.current) { 8.dp.toPx() }
-            Box(Modifier.fillMaxSize().testTag("coach_test_screen")) {
+            BoxWithConstraints(Modifier.fillMaxSize()) {
+                val coachHeight = maxHeight * 0.4f
                 Scaffold(bottomBar = {
-                    NavigationBar(Modifier.testTag("coach_test_navigation")) {
-                        listOf("Home", "Habits", "Apps", "Stats", "Bob").forEach { label ->
-                            NavigationBarItem(selected = label == "Home", onClick = {},
-                                icon = { Text(label) })
+                    Column {
+                        if (showCoach) BobCoachPanel(welcome, "Продолжить", {},
+                            modifier = Modifier.padding(8.dp).heightIn(max = coachHeight),
+                            position = CoachPosition.BOTTOM, visibleTextLength = visibleLength)
+                        NavigationBar(Modifier.testTag("coach_test_navigation")) {
+                            listOf("Home", "Habits", "Apps", "Stats", "Bob").forEach { label ->
+                                NavigationBarItem(selected = label == "Home", onClick = {}, icon = { Text(label) })
+                            }
                         }
                     }
-                }) { padding -> Box(Modifier.fillMaxSize().padding(padding)) }
-                BobCoachOverlay(
-                    text = if (state.onboardingStep == OnboardingStep.WELCOME) welcome else "Это главная страница.",
-                    actionLabel = "Продолжить",
-                    action = { state = state.advance(state.onboardingStep, SetupRequirements()) },
-                    position = coachPositionFor(state.onboardingStep)
-                )
+                }) { padding -> Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).testTag("coach_test_content")) }
             }
         } }
-        val screen = compose.onNodeWithTag("coach_test_screen").fetchSemanticsNode().boundsInRoot
-        var safeArea = compose.onNodeWithTag("bob_coach_safe_area").fetchSemanticsNode().boundsInRoot
-        var panel = compose.onNodeWithTag("bob_coach_panel").fetchSemanticsNode().boundsInRoot
+        val panel = compose.onNodeWithTag("bob_coach_panel").fetchSemanticsNode().boundsInRoot
         val navigation = compose.onNodeWithTag("coach_test_navigation").fetchSemanticsNode().boundsInRoot
+        val content = compose.onNodeWithTag("coach_test_content").fetchSemanticsNode().boundsInRoot
         val bob = compose.onNodeWithTag("bob_coach_mascot").fetchSemanticsNode().boundsInRoot
-        val text = compose.onNodeWithText(welcome).fetchSemanticsNode().boundsInRoot
-        assertEquals(safeArea.top + gapPx, panel.top, 1f)
-        assertTrue(panel.top < screen.center.y)
+        val text = compose.onNodeWithTag("bob_coach_text", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         assertTrue(panel.bottom <= navigation.top)
-        assertTrue(bob.right <= text.left)
-        compose.onNodeWithTag("coach_test_navigation").assertIsDisplayed()
-        compose.onNodeWithTag("bob_coach_primary").assertIsDisplayed().performClick()
-        compose.runOnIdle { assertEquals(OnboardingStep.HOME, state.onboardingStep) }
-        safeArea = compose.onNodeWithTag("bob_coach_safe_area").fetchSemanticsNode().boundsInRoot
-        panel = compose.onNodeWithTag("bob_coach_panel").fetchSemanticsNode().boundsInRoot
-        assertEquals(safeArea.bottom - gapPx, panel.bottom, 1f)
-        compose.onNodeWithTag("bob_coach_primary").assertIsDisplayed()
+        assertTrue(content.bottom <= panel.top)
+        assertTrue(text.right <= bob.left)
+        for (length in listOf(welcome.length / 2, welcome.length)) {
+            compose.runOnIdle { visibleLength = length }
+            assertEquals(panel, compose.onNodeWithTag("bob_coach_panel").fetchSemanticsNode().boundsInRoot)
+            assertEquals(navigation, compose.onNodeWithTag("coach_test_navigation").fetchSemanticsNode().boundsInRoot)
+        }
+        compose.runOnIdle { showCoach = false }
+        compose.onNodeWithTag("bob_coach_panel").assertDoesNotExist()
+        val expanded = compose.onNodeWithTag("coach_test_content").fetchSemanticsNode().boundsInRoot
+        assertTrue(expanded.height > content.height)
+        assertEquals(navigation, compose.onNodeWithTag("coach_test_navigation").fetchSemanticsNode().boundsInRoot)
     }
 
     @Test fun primaryWorksAndCoachDoesNotActivateUnderlyingUi() {

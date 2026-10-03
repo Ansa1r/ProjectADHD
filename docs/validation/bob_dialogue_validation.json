@@ -1,0 +1,38 @@
+{
+  "base_commit": "aa57ae06f0eca9ca202eede2887336dd1faeccd2",
+  "original_files": 317,
+  "unchanged_original_files": 307,
+  "changed_original_files": [
+    "README.md",
+    "app/src/androidTest/kotlin/com/ansa1r/projectadhd/BlockingOpacityPersistenceTest.kt",
+    "app/src/androidTest/kotlin/com/ansa1r/projectadhd/BobCoachOverlayTest.kt",
+    "app/src/androidTest/kotlin/com/ansa1r/projectadhd/WelcomeFirstLaunchTest.kt",
+    "app/src/main/kotlin/com/ansa1r/projectadhd/navigation/AppNavigation.kt",
+    "app/src/main/kotlin/com/ansa1r/projectadhd/ui/mascot/MascotView.kt",
+    "app/src/main/kotlin/com/ansa1r/projectadhd/ui/mascot/animation/BobMascot.kt",
+    "app/src/main/kotlin/com/ansa1r/projectadhd/ui/onboarding/BobCoachOverlay.kt",
+    "app/src/main/kotlin/com/ansa1r/projectadhd/ui/onboarding/OnboardingCoach.kt",
+    "app/src/test/kotlin/com/ansa1r/projectadhd/OnboardingCoachPositionTest.kt"
+  ],
+  "unit_tests": {
+    "tests": 153,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "testDebugUnitTest": "BUILD SUCCESSFUL",
+  "assembleDebug": "BUILD SUCCESSFUL",
+  "assembleDebugAndroidTest": "BUILD SUCCESSFUL (compilation only)",
+  "device_tests": "not run",
+  "original_wav_sha256": {
+    "bob_voice_01.wav": "50c81f44ce6eb1084e1015f9dd229d7a0156204388e2483a729fce17edb1b98f",
+    "bob_voice_02.wav": "c21a35ca9fe6347bd2753d23d57cba642da582dd64b267076be463a82bfdae21",
+    "bob_voice_03.wav": "6c6882576c208fdf7a2bc2db377865f01b37e88785f4fb5764e798488d663e85",
+    "bob_voice_04.wav": "f56395a0c30c49b48e0d07e85ed661c9ff4cc8b0daafce3686519362c7ead1dc",
+    "bob_voice_05.wav": "e2021663bdb5117664f875c75874df909dec807dd671c4b83e669d736a85a23c",
+    "bob_voice_06.wav": "bb4f6386b33e293c8da969b4d7dbb1dc0ec9f66aeb95323cbfd53279f1d0b6df",
+    "bob_voice_07.wav": "eedb6960c24b3481119772d9a5f9bca83e47a57ab800241dcae37f3cf5ab5b3c",
+    "bob_voice_08.wav": "6594e96667300821f5873d208264a50eb59014e04480aafa3ef2037367478e32"
+  },
+  "apk_sha256": "90d7fffb14bf6849ea953732534eb6b18c9db3cafaa701214f1815854897e38f"
+}

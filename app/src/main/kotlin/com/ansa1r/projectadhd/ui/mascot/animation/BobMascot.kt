@@ -28,7 +28,8 @@ fun BobMascot(
     isTalking: Boolean = BobAnimationDefaults.IsTalking,
     animationEnabled: Boolean = true,
     blinkRequest: Int = 0,
-    showLayerBounds: Boolean = false
+    showLayerBounds: Boolean = false,
+    speechElapsedMillis: Int? = null
 ) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var visible by remember(lifecycle) { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) }
@@ -48,7 +49,7 @@ fun BobMascot(
             infiniteRepeatable(tween(BobAnimationTimeline.FLOAT_CYCLE_MS, easing = LinearEasing)), label = "Idle phase")
         blink = transition.animateFloat(0f, BobAnimationTimeline.BLINK_CYCLE_MS.toFloat(),
             infiniteRepeatable(tween(BobAnimationTimeline.BLINK_CYCLE_MS, easing = LinearEasing)), label = "Blink clock")
-        speech = if (isTalking) transition.animateFloat(0f, BobAnimationTimeline.TALK_CYCLE_MS.toFloat(),
+        speech = if (isTalking && speechElapsedMillis == null) transition.animateFloat(0f, BobAnimationTimeline.TALK_CYCLE_MS.toFloat(),
             infiniteRepeatable(tween(BobAnimationTimeline.TALK_CYCLE_MS, easing = LinearEasing)), label = "Talking clock") else frozen
     } else {
         motion = frozen; blink = frozen; speech = frozen
@@ -75,7 +76,7 @@ fun BobMascot(
             forcedBlink.value < BobAnimationTimeline.BLINK_DURATION_MS -> BobAnimationTimeline.blinkAt(forcedBlink.value.toInt())
             else -> BobAnimationTimeline.eyesAt(blink.value.toInt())
         }
-        val mouth = BobAnimationTimeline.mouthAt(speech.value.toInt(), running && isTalking)
+        val mouth = BobAnimationTimeline.mouthAt(speechElapsedMillis ?: speech.value.toInt(), running && isTalking)
         val side = min(size.width, size.height)
         val unitScale = side / 400f
         val floatY = if (running && unitScale > 0f) BobIdleMotion.floatY(phase) * min(1f, 6.dp.toPx() / (8.8f * unitScale)) else 0f
@@ -109,7 +110,7 @@ fun BobMascot(
             part("BLUSH")
             part(when {
                 blocking -> "MOUTH_BLOCKING_${mouth.name}"
-                happy && mouth == BobMouthState.IDLE -> "MOUTH_WIDE"
+                happy && mouth == BobMouthState.IDLE && speechElapsedMillis == null -> "MOUTH_WIDE"
                 else -> "MOUTH_${mouth.name}"
             })
         }

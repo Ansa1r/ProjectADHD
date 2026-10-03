@@ -7,6 +7,7 @@ import com.ansa1r.projectadhd.ui.onboarding.*
 import com.ansa1r.projectadhd.ui.startup.LocalStartupVisible
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Alignment
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ansa1r.projectadhd.ui.mascot.*
@@ -125,115 +126,125 @@ fun AppNavigation(container: AppContainer, habitsRequest: Int = 0, stopRequest: 
         }
         return
     }
-    Box(Modifier.fillMaxSize()) {
-    Scaffold(modifier = if (coachVisible) Modifier.clearAndSetSemantics { } else Modifier,
-        topBar = {
-            TopAppBar(title = {
-                if (route == Screen.HOME.route) Row(Modifier.clickable(enabled = !guided) { open(ProfileRoutes.ROOT) }.testTag("home_profile"),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    UserAvatar(profile.avatar, Modifier.size(42.dp))
-                    Text(profile.nickname ?: stringResource(R.string.nickname_default), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                } else if (route != Screen.MASCOT.route) Text(stringResource(title), maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }, navigationIcon = {
-                if (mainSection == null || route != mainSection.route) IconButton(onClick = { back() }, enabled = !coachVisible) {
-                    Icon(painterResource(R.drawable.ic_back), contentDescription = stringResource(R.string.back))
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val coachMaxHeight = maxHeight * 0.4f
+        Scaffold(
+            topBar = {
+                TopAppBar(title = {
+                    if (route == Screen.HOME.route) Row(Modifier.clickable(enabled = !guided) { open(ProfileRoutes.ROOT) }.testTag("home_profile"),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        UserAvatar(profile.avatar, Modifier.size(42.dp))
+                        Text(profile.nickname ?: stringResource(R.string.nickname_default), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    } else if (route != Screen.MASCOT.route) Text(stringResource(title), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }, navigationIcon = {
+                    if (mainSection == null || route != mainSection.route) IconButton(onClick = { back() }, enabled = !coachVisible) {
+                        Icon(painterResource(R.drawable.ic_back), contentDescription = stringResource(R.string.back))
+                    }
+                }, actions = {
+                    if (route == Screen.HOME.route) IconButton(onClick = { open(SettingsRoutes.ROOT) }, enabled = !guided) {
+                        Icon(painterResource(R.drawable.ic_nav_settings), contentDescription = stringResource(R.string.settings))
+                    }
+                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandColors.Background))
+            },
+            bottomBar = {
+                Column(Modifier.fillMaxWidth().then(if (coachVisible) Modifier.windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)) else Modifier)) {
+                if (coachVisible && !startupVisible) OnboardingCoach(onboardingVm, requireNotNull(step),
+                    Modifier.padding(horizontal = 12.dp, vertical = 8.dp).heightIn(max = coachMaxHeight))
+                if (mainSection != null) NavigationBar(modifier = Modifier.testTag("bottom_navigation"),
+                    containerColor = BrandColors.Background, tonalElevation = 0.dp) {
+                    Screen.entries.forEach { screen ->
+                        NavigationBarItem(selected = mainSection == screen,
+                            modifier = Modifier.testTag("bottom_item_" + screen.route),
+                            onClick = { if (!guided) openMain(screen) }, enabled = !guided,
+                            icon = { Icon(painterResource(screen.icon), contentDescription = stringResource(screen.title)) },
+                            label = null, alwaysShowLabel = false,
+                            colors = NavigationBarItemDefaults.colors(indicatorColor = BrandColors.PurpleSurface.copy(alpha = com.ansa1r.projectadhd.ui.theme.BrandOpacity.Ordinary),
+                                selectedIconColor = BrandColors.Text, unselectedIconColor = BrandColors.Muted))
+                    }
                 }
-            }, actions = {
-                if (route == Screen.HOME.route) IconButton(onClick = { open(SettingsRoutes.ROOT) }, enabled = !guided) {
-                    Icon(painterResource(R.drawable.ic_nav_settings), contentDescription = stringResource(R.string.settings))
-                }
-            }, colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandColors.Background))
-        },
-        bottomBar = {
-            if (mainSection != null) NavigationBar(modifier = Modifier.testTag("bottom_navigation"),
-                containerColor = BrandColors.Background, tonalElevation = 0.dp) {
-                Screen.entries.forEach { screen ->
-                    NavigationBarItem(selected = mainSection == screen,
-                        modifier = Modifier.testTag("bottom_item_" + screen.route),
-                        onClick = { if (!guided) openMain(screen) }, enabled = !guided,
-                        icon = { Icon(painterResource(screen.icon), contentDescription = stringResource(screen.title)) },
-                        label = null, alwaysShowLabel = false,
-                        colors = NavigationBarItemDefaults.colors(indicatorColor = BrandColors.PurpleSurface.copy(alpha = com.ansa1r.projectadhd.ui.theme.BrandOpacity.Ordinary),
-                            selectedIconColor = BrandColors.Text, unselectedIconColor = BrandColors.Muted))
                 }
             }
-        }
-    ) { padding ->
-        MascotBackdrop(Modifier.fillMaxSize().padding(padding), enabled = !settings) {
-            CompositionLocalProvider(LocalCalmSurfaces provides settings, LocalCoachStep provides step) {
-                NavHost(navController = nav, startDestination = Screen.HOME.route) {
-                    composable(Screen.HOME.route) {
-                        HomeScreen(viewModel(factory = factory { HomeViewModel(container) }),
-                            openHabits = { openMain(Screen.HABITS) }, openApps = { openMain(Screen.APPS) },
-                            openStats = { openMain(Screen.STATS) }, openPermissions = { open(SettingsRoutes.PERMISSIONS) })
-                    }
-                    composable(Screen.HABITS.route) { HabitsScreen(viewModel(factory = factory { HabitsViewModel(container) }),
-                        create = { open(HabitRoutes.CREATE) }, edit = { open("habits/edit/$it") }) }
-                    composable(HabitRoutes.CREATE) { screenEntry -> CreateHabitScreen(viewModel(factory = factory { CreateHabitViewModel(container) }), saved = {
-                        if (step == OnboardingStep.CREATE_HABIT) onboardingVm.advance(OnboardingStep.CREATE_HABIT)
-                        else if (!guided && nav.currentBackStackEntry?.id == screenEntry.id) nav.popBackStack()
-                    }) }
-                    composable(HabitRoutes.EDIT) { screenEntry -> CreateHabitScreen(viewModel(factory = factory {
-                        CreateHabitViewModel(container, screenEntry.arguments?.getString("id")?.toLongOrNull())
-                    }), saved = { if (nav.currentBackStackEntry?.id == screenEntry.id) nav.popBackStack() }) }
-                    composable(Screen.MASCOT.route) { MascotScreen(viewModel(factory = factory { MascotViewModel(container) }),
-                        customize = { open(MascotRoutes.CUSTOMIZE) }, history = { open(MascotRoutes.HISTORY) }) }
-                    composable(MascotRoutes.CUSTOMIZE) { ProfilePlaceholderScreen(R.string.mascot_customization, R.string.mascot_customization_hint) }
-                    composable(MascotRoutes.HISTORY) { MascotHistoryScreen(viewModel(factory = factory { MascotViewModel(container) })) }
-                    navigation(startDestination = AppsRoutes.SELECTION, route = AppsRoutes.ROOT) {
-                        composable(AppsRoutes.SELECTION) { screenEntry ->
-                            val owner = remember(screenEntry) { nav.getBackStackEntry(AppsRoutes.ROOT) }
-                            val vm: AppsViewModel = viewModel(viewModelStoreOwner = owner, factory = factory { AppsViewModel(container) })
-                            AppsScreen(vm, continueToLimits = { open(AppsRoutes.LIMITS) }, saved = {
-                                if (step == OnboardingStep.SELECT_APPS) onboardingVm.advance(OnboardingStep.SELECT_APPS)
-                                else if (!guided && nav.currentBackStackEntry?.id == screenEntry.id) openMain(Screen.HOME)
+        ) { padding ->
+            Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).testTag("main_content_area")) {
+            MascotBackdrop(Modifier.fillMaxSize().then(if (coachVisible) Modifier.clearAndSetSemantics { } else Modifier), enabled = !settings) {
+                CompositionLocalProvider(LocalCalmSurfaces provides settings, LocalCoachStep provides step) {
+                    NavHost(navController = nav, startDestination = Screen.HOME.route) {
+                        composable(Screen.HOME.route) {
+                            HomeScreen(viewModel(factory = factory { HomeViewModel(container) }),
+                                openHabits = { openMain(Screen.HABITS) }, openApps = { openMain(Screen.APPS) },
+                                openStats = { openMain(Screen.STATS) }, openPermissions = { open(SettingsRoutes.PERMISSIONS) })
+                        }
+                        composable(Screen.HABITS.route) { HabitsScreen(viewModel(factory = factory { HabitsViewModel(container) }),
+                            create = { open(HabitRoutes.CREATE) }, edit = { open("habits/edit/$it") }) }
+                        composable(HabitRoutes.CREATE) { screenEntry -> CreateHabitScreen(viewModel(factory = factory { CreateHabitViewModel(container) }), saved = {
+                            if (step == OnboardingStep.CREATE_HABIT) onboardingVm.advance(OnboardingStep.CREATE_HABIT)
+                            else if (!guided && nav.currentBackStackEntry?.id == screenEntry.id) nav.popBackStack()
+                        }) }
+                        composable(HabitRoutes.EDIT) { screenEntry -> CreateHabitScreen(viewModel(factory = factory {
+                            CreateHabitViewModel(container, screenEntry.arguments?.getString("id")?.toLongOrNull())
+                        }), saved = { if (nav.currentBackStackEntry?.id == screenEntry.id) nav.popBackStack() }) }
+                        composable(Screen.MASCOT.route) { MascotScreen(viewModel(factory = factory { MascotViewModel(container) }),
+                            customize = { open(MascotRoutes.CUSTOMIZE) }, history = { open(MascotRoutes.HISTORY) }) }
+                        composable(MascotRoutes.CUSTOMIZE) { ProfilePlaceholderScreen(R.string.mascot_customization, R.string.mascot_customization_hint) }
+                        composable(MascotRoutes.HISTORY) { MascotHistoryScreen(viewModel(factory = factory { MascotViewModel(container) })) }
+                        navigation(startDestination = AppsRoutes.SELECTION, route = AppsRoutes.ROOT) {
+                            composable(AppsRoutes.SELECTION) { screenEntry ->
+                                val owner = remember(screenEntry) { nav.getBackStackEntry(AppsRoutes.ROOT) }
+                                val vm: AppsViewModel = viewModel(viewModelStoreOwner = owner, factory = factory { AppsViewModel(container) })
+                                AppsScreen(vm, continueToLimits = { open(AppsRoutes.LIMITS) }, saved = {
+                                    if (step == OnboardingStep.SELECT_APPS) onboardingVm.advance(OnboardingStep.SELECT_APPS)
+                                    else if (!guided && nav.currentBackStackEntry?.id == screenEntry.id) openMain(Screen.HOME)
+                                })
+                            }
+                            composable(AppsRoutes.LIMITS) { screenEntry ->
+                                val owner = remember(screenEntry) { nav.getBackStackEntry(AppsRoutes.ROOT) }
+                                val vm: AppsViewModel = viewModel(viewModelStoreOwner = owner, factory = factory { AppsViewModel(container) })
+                                SessionLimitScreen(vm, saved = {
+                                    if (step == OnboardingStep.SELECT_APPS) onboardingVm.advance(OnboardingStep.SELECT_APPS)
+                                    else if (!guided && nav.currentBackStackEntry?.id == screenEntry.id) openMain(Screen.HOME)
+                                }, returnToSelection = { nav.popBackStack() })
+                            }
+                        }
+                        composable(Screen.STATS.route) { StatsScreen(viewModel(factory = factory { StatsViewModel(container) })) }
+                        composable(ProfileRoutes.ROOT) {
+                            ProfileScreen(profileVm,
+                                openProgress = { open(ProfileRoutes.PROGRESS) },
+                                editProfile = { open(ProfileRoutes.EDIT) })
+                        }
+                        composable(ProfileRoutes.EDIT) { screenEntry ->
+                            EditProfileScreen(viewModel(factory = factory { EditProfileViewModel(container) }), saved = {
+                                if (nav.currentBackStackEntry?.id == screenEntry.id) nav.popBackStack()
                             })
                         }
-                        composable(AppsRoutes.LIMITS) { screenEntry ->
-                            val owner = remember(screenEntry) { nav.getBackStackEntry(AppsRoutes.ROOT) }
-                            val vm: AppsViewModel = viewModel(viewModelStoreOwner = owner, factory = factory { AppsViewModel(container) })
-                            SessionLimitScreen(vm, saved = {
-                                if (step == OnboardingStep.SELECT_APPS) onboardingVm.advance(OnboardingStep.SELECT_APPS)
-                                else if (!guided && nav.currentBackStackEntry?.id == screenEntry.id) openMain(Screen.HOME)
-                            }, returnToSelection = { nav.popBackStack() })
+                        composable(ProfileRoutes.PROGRESS) { StatsScreen(viewModel(factory = factory { StatsViewModel(container) })) }
+                        composable(ProfileRoutes.ACHIEVEMENTS) { ProfilePlaceholderScreen(R.string.achievements, R.string.achievements_placeholder) }
+                        composable(SettingsRoutes.ROOT) {
+                            SettingsScreen(openPermissions = { open(SettingsRoutes.PERMISSIONS) },
+                                openBlocking = { open(SettingsRoutes.BLOCKING) }, openTheme = { open(SettingsRoutes.THEME) },
+                                openPrivacy = { open(SettingsRoutes.PRIVACY) }, openDeveloper = { open(SettingsRoutes.DEVELOPER) },
+                                monitoringViewModel = viewModel(factory = factory { MonitoringSettingsViewModel(container) }), stopRequest = pendingStopRequest,
+                                stopRequestHandled = { pendingStopRequest = 0 })
                         }
-                    }
-                    composable(Screen.STATS.route) { StatsScreen(viewModel(factory = factory { StatsViewModel(container) })) }
-                    composable(ProfileRoutes.ROOT) {
-                        ProfileScreen(profileVm,
-                            openProgress = { open(ProfileRoutes.PROGRESS) },
-                            editProfile = { open(ProfileRoutes.EDIT) })
-                    }
-                    composable(ProfileRoutes.EDIT) { screenEntry ->
-                        EditProfileScreen(viewModel(factory = factory { EditProfileViewModel(container) }), saved = {
-                            if (nav.currentBackStackEntry?.id == screenEntry.id) nav.popBackStack()
-                        })
-                    }
-                    composable(ProfileRoutes.PROGRESS) { StatsScreen(viewModel(factory = factory { StatsViewModel(container) })) }
-                    composable(ProfileRoutes.ACHIEVEMENTS) { ProfilePlaceholderScreen(R.string.achievements, R.string.achievements_placeholder) }
-                    composable(SettingsRoutes.ROOT) {
-                        SettingsScreen(openPermissions = { open(SettingsRoutes.PERMISSIONS) },
-                            openBlocking = { open(SettingsRoutes.BLOCKING) }, openTheme = { open(SettingsRoutes.THEME) },
-                            openPrivacy = { open(SettingsRoutes.PRIVACY) }, openDeveloper = { open(SettingsRoutes.DEVELOPER) },
-                            monitoringViewModel = viewModel(factory = factory { MonitoringSettingsViewModel(container) }), stopRequest = pendingStopRequest,
-                            stopRequestHandled = { pendingStopRequest = 0 })
-                    }
-                    composable(SettingsRoutes.PERMISSIONS) { PermissionsScreen(viewModel(factory = factory { PermissionsViewModel(container) }),
-                        onReady = onboardingVm::refreshPermissions) }
-                    composable(SettingsRoutes.BLOCKING) {
-                        BlockingSettingsScreen(viewModel(factory = factory { SettingsViewModel(container) }))
-                    }
-                    composable(SettingsRoutes.THEME) { SettingsPlaceholderScreen(R.string.interface_theme, R.string.theme_placeholder) }
-                    composable(SettingsRoutes.PRIVACY) { SettingsPlaceholderScreen(R.string.privacy, R.string.privacy_placeholder, showPrivacyInfo = true) }
-                    if (BuildConfig.DEBUG) {
-                        composable(SettingsRoutes.DEVELOPER) { DeveloperScreen { open(SettingsRoutes.DEBUG) } }
-                        composable(SettingsRoutes.DEBUG) { DebugScreen(viewModel(factory = factory { DebugViewModel(container) })) }
+                        composable(SettingsRoutes.PERMISSIONS) { PermissionsScreen(viewModel(factory = factory { PermissionsViewModel(container) }),
+                            onReady = onboardingVm::refreshPermissions) }
+                        composable(SettingsRoutes.BLOCKING) {
+                            BlockingSettingsScreen(viewModel(factory = factory { SettingsViewModel(container) }))
+                        }
+                        composable(SettingsRoutes.THEME) { SettingsPlaceholderScreen(R.string.interface_theme, R.string.theme_placeholder) }
+                        composable(SettingsRoutes.PRIVACY) { SettingsPlaceholderScreen(R.string.privacy, R.string.privacy_placeholder, showPrivacyInfo = true) }
+                        if (BuildConfig.DEBUG) {
+                            composable(SettingsRoutes.DEVELOPER) { DeveloperScreen { open(SettingsRoutes.DEBUG) } }
+                            composable(SettingsRoutes.DEBUG) { DebugScreen(viewModel(factory = factory { DebugViewModel(container) })) }
+                        }
                     }
                 }
             }
+            if (coachVisible) Box(Modifier.matchParentSize().pointerInput(Unit) {
+                awaitPointerEventScope { while (true) awaitPointerEvent().changes.forEach { it.consume() } }
+            })
+            }
         }
-    }
-    if (coachVisible && !startupVisible) OnboardingCoach(onboardingVm, requireNotNull(step))
     }
     if (!guided && route != SettingsRoutes.ROOT) PendingHabitConfirmation(container, inlineOnHabits = route == Screen.HABITS.route)
 }

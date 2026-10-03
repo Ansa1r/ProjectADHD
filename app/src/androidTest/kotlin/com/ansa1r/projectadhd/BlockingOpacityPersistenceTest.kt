@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ansa1r.projectadhd.data.preferences.AppPreferences
+import com.ansa1r.projectadhd.ui.theme.BrandOpacity
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import org.junit.Assert.*
@@ -16,57 +17,33 @@ import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class BlockingOpacityPersistenceTest {
-    private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
-
-    @Test fun defaultsAndAllValidValuesPersistAndRestore() = runBlocking {
-        val file = File(context.cacheDir, "opacity-${UUID.randomUUID()}.preferences_pb")
+    @Test fun legacyOpacityKeysDoNotChangeCurrentSettingsAndSurviveStoreReopen() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val file = File(context.cacheDir, "legacy-opacity-${UUID.randomUUID()}.preferences_pb")
+        val key = intPreferencesKey("blocking_overlay_opacity_percent")
         val job = SupervisorJob()
         try {
             val store = PreferenceDataStoreFactory.create(scope = CoroutineScope(job + Dispatchers.IO), produceFile = { file })
             val preferences = AppPreferences(store)
-            assertEquals(65, preferences.blockingOverlayOpacity.first())
+            preferences.setCooldown(17)
+            preferences.setPraiseCooldown(44)
             preferences.markPraise(123L)
-            for (value in 30..90 step 5) {
-                preferences.setBlockingOpacity(value)
-                assertEquals(value, preferences.blockingOverlayOpacity.first())
-                assertEquals(123L, preferences.settings.first().lastPraiseAt ?: 0L)
+            val settings = preferences.settings.first()
+            for (legacyValue in listOf(-100, 30, 52, 65, 85, 90, 500)) {
+                store.edit { it[key] = legacyValue }
+                assertEquals(settings, preferences.settings.first())
+                assertEquals(0.85f, BrandOpacity.Blocking, 0f)
             }
         } finally { job.cancelAndJoin() }
         val reopenedJob = SupervisorJob()
         try {
-            val reopened = PreferenceDataStoreFactory.create(scope = CoroutineScope(reopenedJob + Dispatchers.IO), produceFile = { file })
-            assertEquals(90, AppPreferences(reopened).blockingOverlayOpacity.first())
+            val store = PreferenceDataStoreFactory.create(scope = CoroutineScope(reopenedJob + Dispatchers.IO), produceFile = { file })
+            val settings = AppPreferences(store).settings.first()
+            assertEquals(17, settings.cooldownMinutes)
+            assertEquals(44, settings.praiseCooldownMinutes)
+            assertEquals(123L, settings.lastPraiseAt ?: 0L)
+            assertEquals(500, store.data.first()[key])
+            assertEquals(0.85f, BrandOpacity.Blocking, 0f)
         } finally { reopenedJob.cancelAndJoin(); file.delete() }
-    }
-
-    @Test fun invalidStoredValuesAreSafelyNormalized() = runBlocking {
-        val file = File(context.cacheDir, "opacity-invalid-${UUID.randomUUID()}.preferences_pb")
-        val job = SupervisorJob()
-        try {
-            val store = PreferenceDataStoreFactory.create(scope = CoroutineScope(job + Dispatchers.IO), produceFile = { file })
-            val preferences = AppPreferences(store)
-            val key = intPreferencesKey("blocking_overlay_opacity_percent")
-            for ((stored, expected) in listOf(-100 to 30, 52 to 50, 68 to 70, 500 to 90)) {
-                store.edit { it[key] = stored }
-                assertEquals(expected, preferences.blockingOverlayOpacity.first())
-            }
-        } finally { job.cancelAndJoin(); file.delete() }
-    }
-
-    @Test fun existingOverlayControllerReceivesLiveChangesWithoutRestart() = runBlocking {
-        val container = (context.applicationContext as ProjectADHDApplication).container
-        val controller = container.overlays
-        val original = container.preferences.blockingOverlayOpacity.first()
-        try {
-            for (value in listOf(30, 85)) {
-                container.preferences.setBlockingOpacity(value)
-                val observed = withTimeout(5_000) { controller.state.first { it.blockingOpacityPercent == value } }
-                assertEquals(value, observed.blockingOpacityPercent)
-                assertSame(controller, container.overlays)
-            }
-        } finally {
-            container.preferences.setBlockingOpacity(original)
-            withTimeout(5_000) { controller.state.first { it.blockingOpacityPercent == original } }
-        }
     }
 }

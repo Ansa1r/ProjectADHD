@@ -2,6 +2,7 @@ package com.ansa1r.projectadhd.ui.onboarding
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,9 +12,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.*
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.unit.dp
 import com.ansa1r.projectadhd.domain.model.MascotMood
 import com.ansa1r.projectadhd.ui.components.BrandButton
@@ -30,16 +34,28 @@ enum class CoachPosition { TOP, BOTTOM }
 fun BobCoachPanel(text: String, actionLabel: String, action: () -> Unit,
     modifier: Modifier = Modifier, position: CoachPosition = CoachPosition.BOTTOM,
     secondaryLabel: String? = null, secondary: () -> Unit = {}, enabled: Boolean = true,
-    mood: MascotMood = MascotMood.IDLE, isTalking: Boolean = false) {
-    Surface(modifier.fillMaxWidth().testTag("bob_coach_panel").semantics { paneTitle = "Боб"; liveRegion = LiveRegionMode.Polite }
-        .pointerInput(Unit) { detectTapGestures { } }, shape = RoundedCornerShape(20.dp),
+    mood: MascotMood = MascotMood.IDLE, isTalking: Boolean = false,
+    visibleTextLength: Int = text.length, speechElapsedMillis: Int? = null,
+    onPanelTap: (() -> Unit)? = null, showBob: Boolean = true, readyToAdvance: Boolean = true) {
+    val panelInput = if (onPanelTap != null) Modifier.clickable(enabled = enabled, onClick = onPanelTap)
+        else Modifier.pointerInput(Unit) { detectTapGestures { } }
+    val fullMessage = text
+    val displayed = AnnotatedString.Builder(text).apply {
+        addStyle(SpanStyle(color = Color.Transparent), visibleTextLength.coerceIn(0, text.length), text.length)
+    }.toAnnotatedString()
+    Surface(modifier.fillMaxWidth().testTag("bob_coach_panel").semantics {
+        paneTitle = "Боб"; liveRegion = LiveRegionMode.Polite
+        stateDescription = if (readyToAdvance) "Готов к продолжению" else "Нажми, чтобы показать текст целиком"
+    }
+        .then(panelInput), shape = RoundedCornerShape(20.dp),
         color = BrandColors.PurpleDeep.copy(alpha = BrandOpacity.Coach), contentColor = BrandColors.Text,
         border = BorderStroke(2.dp, BrandColors.PurpleOutline), tonalElevation = 0.dp) {
         Row(Modifier.verticalScroll(rememberScrollState()).padding(12.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (position == CoachPosition.TOP) MascotView(mood, Modifier.size(72.dp).testTag("bob_coach_mascot"), isTalking = isTalking)
+            if (showBob && position == CoachPosition.TOP) MascotView(mood, Modifier.size(72.dp).testTag("bob_coach_mascot"), isTalking = isTalking, speechElapsedMillis = speechElapsedMillis)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(text, style = MaterialTheme.typography.bodyMedium, color = BrandColors.Text)
+                Text(displayed, style = MaterialTheme.typography.bodyMedium, color = BrandColors.Text,
+                    modifier = Modifier.testTag("bob_coach_text").clearAndSetSemantics { this.text = AnnotatedString(fullMessage) })
                 BrandButton(action, Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("bob_coach_primary"), enabled = enabled, opaque = true) {
                     Text(actionLabel, color = BrandColors.Text)
                 }
@@ -48,7 +64,7 @@ fun BobCoachPanel(text: String, actionLabel: String, action: () -> Unit,
                     Text(secondaryLabel, color = BrandColors.Text)
                 }
             }
-            if (position == CoachPosition.BOTTOM) MascotView(mood, Modifier.size(72.dp).testTag("bob_coach_mascot"), isTalking = isTalking)
+            if (showBob && position == CoachPosition.BOTTOM) MascotView(mood, Modifier.size(72.dp).testTag("bob_coach_mascot"), isTalking = isTalking, speechElapsedMillis = speechElapsedMillis)
         }
     }
 }
